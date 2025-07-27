@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { TorrentStatusIcon } from '@/components/torrent-status-icon';
 import { formatBytes, formatEta, formatSpeed } from '@/lib/utils';
-import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Tv, Film } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 type SortConfig = {
   key: keyof Torrent;
@@ -59,6 +60,7 @@ const SortableHeader = ({
 export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
   const headers: HeaderConfig[] = [
     { key: 'name', label: 'Name', className: 'w-[40%]' },
+    { key: 'is_series', label: 'Series' },
     { key: 'status', label: 'Status' },
     { key: 'size', label: 'Size' },
     { key: 'progress', label: 'Progress' },
@@ -90,6 +92,19 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
             torrents.map((torrent) => (
               <TableRow key={torrent.hash}>
                 <TableCell className="font-medium truncate max-w-xs md:max-w-md" title={torrent.name}>{torrent.name}</TableCell>
+                <TableCell>
+                  {torrent.is_series ? (
+                    <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                      <Tv className="h-3 w-3" />
+                      <span>Series</span>
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                        <Film className="h-3 w-3" />
+                        <span>Movie</span>
+                    </Badge>
+                  )}
+                </TableCell>
                 <TableCell><TorrentStatusIcon status={torrent.status as TorrentStatus} /></TableCell>
                 <TableCell className="whitespace-nowrap">{formatBytes(torrent.size)}</TableCell>
                 <TableCell>

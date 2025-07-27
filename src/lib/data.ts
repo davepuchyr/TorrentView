@@ -1,5 +1,7 @@
 import type { Torrent } from './types';
 
+const seriesRegex = /\bS\d{1,2}E\d{1,2}\b/i;
+
 export const torrents: Torrent[] = [
   {
     hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
@@ -13,6 +15,7 @@ export const torrents: Torrent[] = [
     ratio: 2.15,
     added_on: 1714521600,
     category: 'OS',
+    is_series: false,
   },
   {
     hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1',
@@ -26,6 +29,7 @@ export const torrents: Torrent[] = [
     ratio: 0.02,
     added_on: 1715126400,
     category: 'Software',
+    is_series: false,
   },
   {
     hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2',
@@ -39,6 +43,7 @@ export const torrents: Torrent[] = [
     ratio: 1.01,
     added_on: 1713571200,
     category: 'Books',
+    is_series: false,
   },
   {
     hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3',
@@ -52,6 +57,7 @@ export const torrents: Torrent[] = [
     ratio: 0,
     added_on: 1715212800,
     category: 'Software',
+    is_series: false,
   },
   {
     hash: 'e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3d4',
@@ -65,6 +71,7 @@ export const torrents: Torrent[] = [
     ratio: 0.45,
     added_on: 1715385600,
     category: 'OS',
+    is_series: false,
   },
   {
     hash: 'f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3d4e5',
@@ -78,6 +85,7 @@ export const torrents: Torrent[] = [
     ratio: 5.8,
     added_on: 1712102400,
     category: 'Movies',
+    is_series: false,
   },
   {
     hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b3',
@@ -91,6 +99,7 @@ export const torrents: Torrent[] = [
     ratio: 0.21,
     added_on: 1715040000,
     category: 'Video',
+    is_series: false,
   },
   {
     hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a2',
@@ -104,6 +113,7 @@ export const torrents: Torrent[] = [
     ratio: 0.01,
     added_on: 1715472000,
     category: 'Reference',
+    is_series: false,
   },
   {
     hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b3',
@@ -117,6 +127,7 @@ export const torrents: Torrent[] = [
     ratio: 1.53,
     added_on: 1714867200,
     category: 'Music',
+    is_series: false,
   },
   {
     hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c4',
@@ -130,5 +141,34 @@ export const torrents: Torrent[] = [
     ratio: 0,
     added_on: 1715299200,
     category: 'Images',
+    is_series: false,
   },
-];
+  {
+    hash: 'g7h8i9j0k1l2g7h8i9j0k1l2g7h8i9j0k1l2g7h8',
+    name: 'Altered Carbon S01E03',
+    size: 1073741824,
+    progress: 1,
+    status: 'seeding',
+    dlspeed: 0,
+    upspeed: 256000,
+    eta: 0,
+    ratio: 3.2,
+    added_on: 1715558400,
+    category: 'Series',
+    is_series: true,
+  },
+  {
+    hash: 'h8i9j0k1l2g7h8i9j0k1l2g7h8i9j0k1l2g7h8g7',
+    name: 'The Good Place S04E13',
+    size: 536870912,
+    progress: 1,
+    status: 'completed',
+    dlspeed: 0,
+    upspeed: 0,
+    eta: 0,
+    ratio: 1.8,
+    added_on: 1715644800,
+    category: 'Series',
+    is_series: true,
+  },
+].map(torrent => ({ ...torrent, is_series: seriesRegex.test(torrent.name) }));

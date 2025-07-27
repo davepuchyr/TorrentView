@@ -12,4 +12,5 @@ export type Torrent = {
   ratio: number;
   added_on: number; // timestamp
   category: string;
+  is_series: boolean;
 };
