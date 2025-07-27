@@ -11,7 +11,7 @@ export function TorrentClient() {
   const [torrents, setTorrents] = useState<Torrent[]>(mockTorrents); 
   const [filter, setFilter] = useState('');
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Torrent;
+    key: keyof Torrent | 'type';
     direction: 'ascending' | 'descending';
   } | null>({ key: 'added_on', direction: 'descending' });
   const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
@@ -36,10 +36,26 @@ export function TorrentClient() {
 
     if (sortConfig !== null) {
       processableTorrents.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        let aValue: any;
+        let bValue: any;
+
+        if (sortConfig.key === 'type') {
+            const getType = (t: Torrent) => {
+                if (!t.resolution) return 'Other';
+                if (t.is_series) return 'Series';
+                return 'Movie';
+            }
+            aValue = getType(a);
+            bValue = getType(b);
+        } else {
+            aValue = a[sortConfig.key as keyof Torrent];
+            bValue = b[sortConfig.key as keyof Torrent];
+        }
+
+        if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -49,7 +65,7 @@ export function TorrentClient() {
     return processableTorrents;
   }, [torrents, filter, sortConfig]);
 
-  const handleSort = (key: keyof Torrent) => {
+  const handleSort = (key: keyof Torrent | 'type') => {
     let direction: 'ascending' | 'descending' = 'ascending';
     if (
       sortConfig &&

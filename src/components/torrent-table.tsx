@@ -16,20 +16,20 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 type SortConfig = {
-  key: keyof Torrent;
+  key: keyof Torrent | 'type';
   direction: 'ascending' | 'descending';
 } | null;
 
 type Props = {
   torrents: Torrent[];
   sortConfig: SortConfig;
-  onSort: (key: keyof Torrent) => void;
+  onSort: (key: keyof Torrent | 'type') => void;
   selectedTorrent: string | null;
   onRowClick: (hash: string) => void;
 };
 
 type HeaderConfig = {
-    key: keyof Torrent;
+    key: keyof Torrent | 'type';
     label: string;
     className?: string;
     headerClassName?: string;
@@ -42,10 +42,10 @@ const SortableHeader = ({
   onSort,
   className
 }: {
-  columnKey: keyof Torrent;
+  columnKey: keyof Torrent | 'type';
   title: string;
   sortConfig: SortConfig;
-  onSort: (key: keyof Torrent) => void;
+  onSort: (key: keyof Torrent | 'type') => void;
   className?: string;
 }) => {
   const isSorted = sortConfig?.key === columnKey;
@@ -71,7 +71,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
   const { toast } = useToast();
   const headers: HeaderConfig[] = [
     { key: 'name', label: 'Name', className: 'w-[40%]' },
-    { key: 'is_series', label: 'Type' },
+    { key: 'type', label: 'Type' },
     { key: 'resolution', label: 'Resolution' },
     { key: 'status', label: 'Status' },
     { key: 'size', label: 'Size', headerClassName: 'text-right', className: 'text-right' },
