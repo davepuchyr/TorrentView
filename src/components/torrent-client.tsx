@@ -8,13 +8,22 @@ import { TorrentTable } from '@/components/torrent-table';
 import { Search } from 'lucide-react';
 
 export function TorrentClient() {
-  // In a real application, this data would be fetched from the qBittorrent API.
-  const [torrents] = useState<Torrent[]>(mockTorrents); 
+  const [torrents, setTorrents] = useState<Torrent[]>(mockTorrents); 
   const [filter, setFilter] = useState('');
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Torrent;
     direction: 'ascending' | 'descending';
   } | null>({ key: 'added_on', direction: 'descending' });
+  const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
+
+  const handleRowClick = (hash: string) => {
+    setSelectedTorrent(hash);
+    setTorrents(prevTorrents =>
+      prevTorrents.map(t =>
+        t.hash === hash && !t.is_read ? { ...t, is_read: true } : t
+      )
+    );
+  };
 
   const filteredAndSortedTorrents = useMemo(() => {
     let processableTorrents = [...torrents];
@@ -70,6 +79,8 @@ export function TorrentClient() {
           torrents={filteredAndSortedTorrents}
           sortConfig={sortConfig}
           onSort={handleSort}
+          selectedTorrent={selectedTorrent}
+          onRowClick={handleRowClick}
         />
       </div>
     </div>

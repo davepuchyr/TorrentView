@@ -24,6 +24,8 @@ type Props = {
   torrents: Torrent[];
   sortConfig: SortConfig;
   onSort: (key: keyof Torrent) => void;
+  selectedTorrent: string | null;
+  onRowClick: (hash: string) => void;
 };
 
 type HeaderConfig = {
@@ -65,7 +67,7 @@ const SortableHeader = ({
   );
 };
 
-export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
+export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, onRowClick }: Props) {
   const { toast } = useToast();
   const headers: HeaderConfig[] = [
     { key: 'name', label: 'Name', className: 'w-[40%]' },
@@ -114,7 +116,11 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
             torrents.map((torrent) => (
               <ContextMenu key={torrent.hash}>
                 <ContextMenuTrigger asChild>
-                  <TableRow className={cn(torrent.is_read && 'text-muted-foreground')}>
+                  <TableRow 
+                    onClick={() => onRowClick(torrent.hash)}
+                    data-state={selectedTorrent === torrent.hash ? 'selected' : 'unselected'}
+                    className={cn('cursor-pointer', torrent.is_read && 'text-muted-foreground', selectedTorrent === torrent.hash && 'text-foreground')}
+                  >
                     <TableCell className="font-medium truncate max-w-xs md:max-w-md" title={torrent.name}>{torrent.name}</TableCell>
                     <TableCell>
                       {!torrent.resolution ? (
