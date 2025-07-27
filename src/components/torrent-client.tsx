@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { torrents as mockTorrents } from '@/lib/data';
 import type { Torrent } from '@/lib/types';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,28 @@ export function TorrentClient() {
     }
     setSortConfig({ key, direction });
   };
+  
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'j' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        const currentIndex = filteredAndSortedTorrents.findIndex(t => t.hash === selectedTorrent);
+        const nextIndex = (currentIndex + 1) % filteredAndSortedTorrents.length;
+        handleRowClick(filteredAndSortedTorrents[nextIndex].hash);
+    } else if (event.key === 'k' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const currentIndex = filteredAndSortedTorrents.findIndex(t => t.hash === selectedTorrent);
+        const prevIndex = (currentIndex - 1 + filteredAndSortedTorrents.length) % filteredAndSortedTorrents.length;
+        handleRowClick(filteredAndSortedTorrents[prevIndex].hash);
+    }
+  }, [filteredAndSortedTorrents, selectedTorrent, handleRowClick]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
 
   return (
     <div className="p-4 md:p-6 space-y-4">
