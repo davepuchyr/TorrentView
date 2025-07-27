@@ -43,3 +43,15 @@ export function formatEta(seconds: number) {
   
   return parts.slice(0, 2).join(" ");
 }
+
+export function getTrailerSearchUrl(name: string): string {
+  const cleanedName = name
+    .replace(/\b(S\d{1,2}E\d{1,2}|1080p|720p|2160p|4K|UHD|BluRay|x264|x265|WEB-DL|WEBRip|H264|H265|AAC|AC3|DTS|HD|HDRip|DVDRip|BDRip)\b/gi, '')
+    .replace(/[\[\]()]/g, '')
+    .replace(/\./g, ' ')
+    .trim();
+  const searchQuery = `${cleanedName} trailer`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+}
+
+    
