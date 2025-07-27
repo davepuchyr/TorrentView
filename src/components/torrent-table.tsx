@@ -23,6 +23,7 @@ type HeaderConfig = {
     key: keyof Torrent;
     label: string;
     className?: string;
+    headerClassName?: string;
 }
 
 const SortableHeader = ({
@@ -63,13 +64,15 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
     { key: 'is_series', label: 'Type' },
     { key: 'resolution', label: 'Resolution' },
     { key: 'status', label: 'Status' },
-    { key: 'size', label: 'Size' },
-    { key: 'progress', label: 'Progress' },
-    { key: 'dlspeed', label: 'Down Speed' },
-    { key: 'upspeed', label: 'Up Speed' },
-    { key: 'eta', label: 'ETA' },
-    { key: 'ratio', label: 'Ratio' },
+    { key: 'size', label: 'Size', headerClassName: 'text-right', className: 'text-right' },
+    { key: 'progress', label: 'Progress', headerClassName: 'text-right', className: 'text-right' },
+    { key: 'dlspeed', label: 'Down Speed', headerClassName: 'text-right', className: 'text-right' },
+    { key: 'upspeed', label: 'Up Speed', headerClassName: 'text-right', className: 'text-right' },
+    { key: 'eta', label: 'ETA', headerClassName: 'text-right', className: 'text-right' },
+    { key: 'ratio', label: 'Ratio', headerClassName: 'text-right', className: 'text-right' },
   ];
+
+  const statusIndex = headers.findIndex(h => h.key === 'status');
 
   return (
     <div className="w-full overflow-x-auto">
@@ -83,7 +86,7 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
                 title={header.label}
                 sortConfig={sortConfig}
                 onSort={onSort}
-                className={header.className}
+                className={header.headerClassName}
               />
             ))}
           </TableRow>
@@ -117,19 +120,19 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
                   )}
                 </TableCell>
                 <TableCell><TorrentStatusIcon status={torrent.status as TorrentStatus} /></TableCell>
-                <TableCell className="whitespace-nowrap">{formatBytes(torrent.size)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
+                <TableCell className="whitespace-nowrap text-right">{formatBytes(torrent.size)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
                     <Progress value={torrent.progress * 100} className="w-20 sm:w-24" aria-label={`Progress ${torrent.progress * 100}%`} />
-                    <span className="text-sm text-muted-foreground tabular-nums">
+                    <span className="text-sm text-muted-foreground tabular-nums w-12">
                       {(torrent.progress * 100).toFixed(1)}%
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="whitespace-nowrap">{formatSpeed(torrent.dlspeed)}</TableCell>
-                <TableCell className="whitespace-nowrap">{formatSpeed(torrent.upspeed)}</TableCell>
-                <TableCell>{formatEta(torrent.eta)}</TableCell>
-                <TableCell>{torrent.ratio.toFixed(2)}</TableCell>
+                <TableCell className="whitespace-nowrap text-right">{formatSpeed(torrent.dlspeed)}</TableCell>
+                <TableCell className="whitespace-nowrap text-right">{formatSpeed(torrent.upspeed)}</TableCell>
+                <TableCell className="text-right">{formatEta(torrent.eta)}</TableCell>
+                <TableCell className="text-right">{torrent.ratio.toFixed(2)}</TableCell>
               </TableRow>
             ))
           ) : (
