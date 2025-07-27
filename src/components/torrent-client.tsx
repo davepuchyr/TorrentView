@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { torrents as mockTorrents } from '@/lib/data';
-import type { Torrent } from '@/lib/types';
+import type { Torrent, SortConfig } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { TorrentTable } from '@/components/torrent-table';
 import { Search } from 'lucide-react';
@@ -10,10 +10,9 @@ import { Search } from 'lucide-react';
 export function TorrentClient() {
   const [torrents, setTorrents] = useState<Torrent[]>(mockTorrents); 
   const [filter, setFilter] = useState('');
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof Torrent | 'type';
-    direction: 'ascending' | 'descending';
-  } | null>({ key: 'added_on', direction: 'descending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig[]>([
+    { key: 'added_on', direction: 'descending' }
+  ]);
   const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
 
   const handleRowClick = (hash: string) => {
@@ -34,29 +33,31 @@ export function TorrentClient() {
       );
     }
 
-    if (sortConfig !== null) {
+    if (sortConfig.length > 0) {
       processableTorrents.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
+        for (const config of sortConfig) {
+          let aValue: any;
+          let bValue: any;
 
-        if (sortConfig.key === 'type') {
+          if (config.key === 'type') {
             const getType = (t: Torrent) => {
-                if (!t.resolution) return 'Other';
-                if (t.is_series) return 'Series';
-                return 'Movie';
-            }
+              if (!t.resolution) return 2; // Other
+              if (t.is_series) return 0; // Series
+              return 1; // Movie
+            };
             aValue = getType(a);
             bValue = getType(b);
-        } else {
-            aValue = a[sortConfig.key as keyof Torrent];
-            bValue = b[sortConfig.key as keyof Torrent];
-        }
+          } else {
+            aValue = a[config.key as keyof Torrent];
+            bValue = b[config.key as keyof Torrent];
+          }
 
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
+          if (aValue < bValue) {
+            return config.direction === 'ascending' ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return config.direction === 'ascending' ? 1 : -1;
+          }
         }
         return 0;
       });
@@ -64,18 +65,26 @@ export function TorrentClient() {
 
     return processableTorrents;
   }, [torrents, filter, sortConfig]);
+  
+  const handleSort = (key: keyof Torrent | 'type', isShiftClick: boolean) => {
+    setSortConfig(prevConfig => {
+      const newConfig = isShiftClick ? [...prevConfig] : [];
+      const existingIndex = newConfig.findIndex(c => c.key === key);
 
-  const handleSort = (key: keyof Torrent | 'type') => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (
-      sortConfig &&
-      sortConfig.key === key &&
-      sortConfig.direction === 'ascending'
-    ) {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
+      if (existingIndex > -1) {
+        // The key exists, just flip its direction
+        newConfig[existingIndex] = {
+          ...newConfig[existingIndex],
+          direction: newConfig[existingIndex].direction === 'ascending' ? 'descending' : 'ascending'
+        };
+      } else {
+        // The key doesn't exist, add it
+        newConfig.push({ key, direction: 'ascending' });
+      }
+      return newConfig;
+    });
   };
+
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key === 'j' || event.key === 'ArrowDown') {

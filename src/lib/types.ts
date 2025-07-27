@@ -16,3 +16,8 @@ export type Torrent = {
   resolution: number | null;
   is_read: boolean;
 };
+
+export type SortConfig = {
+  key: keyof Torrent | 'type';
+  direction: 'ascending' | 'descending';
+};

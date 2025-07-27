@@ -1,4 +1,4 @@
-import type { Torrent, TorrentStatus } from '@/lib/types';
+import type { Torrent, TorrentStatus, SortConfig } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -15,15 +15,10 @@ import {
 } from "@/components/ui/context-menu";
 import { useToast } from '@/hooks/use-toast';
 
-type SortConfig = {
-  key: keyof Torrent | 'type';
-  direction: 'ascending' | 'descending';
-} | null;
-
 type Props = {
   torrents: Torrent[];
-  sortConfig: SortConfig;
-  onSort: (key: keyof Torrent | 'type') => void;
+  sortConfig: SortConfig[];
+  onSort: (key: keyof Torrent | 'type', isShiftClick: boolean) => void;
   selectedTorrent: string | null;
   onRowClick: (hash: string) => void;
 };
@@ -44,24 +39,33 @@ const SortableHeader = ({
 }: {
   columnKey: keyof Torrent | 'type';
   title: string;
-  sortConfig: SortConfig;
-  onSort: (key: keyof Torrent | 'type') => void;
+  sortConfig: SortConfig[];
+  onSort: (key: keyof Torrent | 'type', isShiftClick: boolean) => void;
   className?: string;
 }) => {
-  const isSorted = sortConfig?.key === columnKey;
-  const direction = sortConfig?.direction;
+  const sortInfo = sortConfig.find(c => c.key === columnKey);
+  const sortIndex = sortConfig.findIndex(c => c.key === columnKey);
+  const isSorted = !!sortInfo;
+  const direction = sortInfo?.direction;
   const SortIcon = isSorted ? (direction === 'ascending' ? ArrowUp : ArrowDown) : ArrowUpDown;
 
   return (
     <TableHead className={cn('whitespace-nowrap', className)}>
-      <Button variant="ghost" onClick={() => onSort(columnKey)} className="-ml-4 h-8 px-2 sm:px-4">
+      <Button variant="ghost" onClick={(e) => onSort(columnKey, e.shiftKey)} className="-ml-4 h-8 px-2 sm:px-4">
         {title}
-        <SortIcon 
-            className={cn(
-                'ml-2 h-4 w-4',
-                isSorted ? 'text-accent' : 'text-muted-foreground/50'
-            )} 
-        />
+        <div className="flex items-center ml-2">
+            <SortIcon 
+                className={cn(
+                    'h-4 w-4',
+                    isSorted ? 'text-accent' : 'text-muted-foreground/50'
+                )} 
+            />
+            {isSorted && sortConfig.length > 1 && (
+                <span className="text-xs font-normal bg-muted text-muted-foreground rounded-full h-4 w-4 flex items-center justify-center ml-1">
+                    {sortIndex + 1}
+                </span>
+            )}
+        </div>
       </Button>
     </TableHead>
   );
