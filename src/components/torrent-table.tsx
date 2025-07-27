@@ -60,7 +60,7 @@ const SortableHeader = ({
 export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
   const headers: HeaderConfig[] = [
     { key: 'name', label: 'Name', className: 'w-[40%]' },
-    { key: 'is_series', label: 'Series' },
+    { key: 'is_series', label: 'Type' },
     { key: 'status', label: 'Status' },
     { key: 'size', label: 'Size' },
     { key: 'progress', label: 'Progress' },
