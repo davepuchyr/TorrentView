@@ -13,4 +13,5 @@ export type Torrent = {
   added_on: number; // timestamp
   category: string;
   is_series: boolean;
+  resolution: number | null;
 };

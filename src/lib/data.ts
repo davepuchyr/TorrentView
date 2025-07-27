@@ -1,6 +1,12 @@
 import type { Torrent } from './types';
 
 const seriesRegex = /\bS\d{1,2}E\d{1,2}\b/i;
+const resolutionRegex = /(\d{3,4})p/i;
+
+const getResolution = (name: string): number | null => {
+  const match = name.match(resolutionRegex);
+  return match ? parseInt(match[1], 10) : null;
+};
 
 export const torrents: Torrent[] = [
   {
@@ -19,7 +25,7 @@ export const torrents: Torrent[] = [
   },
   {
     hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1',
-    name: 'Blender 4.1.1 - Linux',
+    name: 'Blender 4.1.1 - Linux 1080p',
     size: 241172480,
     progress: 0.76,
     status: 'downloading',
@@ -61,7 +67,7 @@ export const torrents: Torrent[] = [
   },
   {
     hash: 'e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3d4',
-    name: 'Arch Linux 2024.05.01 - x86_64',
+    name: 'Arch Linux 2024.05.01 - x86_64 720p',
     size: 1174405120,
     progress: 0.95,
     status: 'downloading',
@@ -75,7 +81,7 @@ export const torrents: Torrent[] = [
   },
   {
     hash: 'f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3d4e5',
-    name: 'Sintel - 4K UHD Version by The Blender Foundation',
+    name: 'Sintel - 4K UHD Version by The Blender Foundation 2160p',
     size: 4294967296,
     progress: 1,
     status: 'seeding',
@@ -117,7 +123,7 @@ export const torrents: Torrent[] = [
   },
   {
     hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b3',
-    name: 'Classical Music Public Domain Collection',
+    name: 'Classical Music Public Domain Collection 1080p',
     size: 16106127360,
     progress: 1,
     status: 'completed',
@@ -131,7 +137,7 @@ export const torrents: Torrent[] = [
   },
   {
     hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c4',
-    name: 'NASA Image Library - High Resolution',
+    name: 'NASA Image Library - High Resolution 2160p',
     size: 322122547200,
     progress: 0.05,
     status: 'paused',
@@ -145,7 +151,7 @@ export const torrents: Torrent[] = [
   },
   {
     hash: 'g7h8i9j0k1l2g7h8i9j0k1l2g7h8i9j0k1l2g7h8',
-    name: 'Altered Carbon S01E03',
+    name: 'Altered Carbon S01E03 1080p',
     size: 1073741824,
     progress: 1,
     status: 'seeding',
@@ -159,7 +165,7 @@ export const torrents: Torrent[] = [
   },
   {
     hash: 'h8i9j0k1l2g7h8i9j0k1l2g7h8i9j0k1l2g7h8g7',
-    name: 'The Good Place S04E13',
+    name: 'The Good Place S04E13 720p',
     size: 536870912,
     progress: 1,
     status: 'completed',
@@ -171,4 +177,8 @@ export const torrents: Torrent[] = [
     category: 'Series',
     is_series: true,
   },
-].map(torrent => ({ ...torrent, is_series: seriesRegex.test(torrent.name) }));
+].map(torrent => ({ 
+    ...torrent, 
+    is_series: seriesRegex.test(torrent.name),
+    resolution: getResolution(torrent.name),
+}));
