@@ -68,23 +68,28 @@ export function TorrentClient() {
   
   const handleSort = (key: keyof Torrent | 'type', isShiftClick: boolean) => {
     setSortConfig(prevConfig => {
-      const newConfig = isShiftClick ? [...prevConfig] : [];
-      const existingIndex = newConfig.findIndex(c => c.key === key);
-
+      const existingIndex = prevConfig.findIndex(c => c.key === key);
+  
       if (existingIndex > -1) {
-        // The key exists, just flip its direction
+        // Key exists, flip direction
+        const newConfig = [...prevConfig];
         newConfig[existingIndex] = {
           ...newConfig[existingIndex],
           direction: newConfig[existingIndex].direction === 'ascending' ? 'descending' : 'ascending'
         };
+        return newConfig;
       } else {
-        // The key doesn't exist, add it
-        newConfig.push({ key, direction: 'ascending' });
+        // Key doesn't exist
+        if (isShiftClick) {
+          // Add to existing sort
+          return [...prevConfig, { key, direction: 'ascending' }];
+        } else {
+          // Replace sort
+          return [{ key, direction: 'ascending' }];
+        }
       }
-      return newConfig;
     });
   };
-
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key === 'j' || event.key === 'ArrowDown') {
