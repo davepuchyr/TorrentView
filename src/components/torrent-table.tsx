@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { TorrentStatusIcon } from '@/components/torrent-status-icon';
 import { formatBytes, formatEta, formatSpeed } from '@/lib/utils';
-import { ArrowUp, ArrowDown, ArrowUpDown, Tv, Film, Monitor } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Tv, Film, Monitor, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -97,7 +97,12 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
               <TableRow key={torrent.hash}>
                 <TableCell className="font-medium truncate max-w-xs md:max-w-md" title={torrent.name}>{torrent.name}</TableCell>
                 <TableCell>
-                  {torrent.is_series ? (
+                  {!torrent.resolution ? (
+                    <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                      <HelpCircle className="h-3 w-3" />
+                      <span>Other</span>
+                    </Badge>
+                  ) : torrent.is_series ? (
                     <Badge variant="outline" className="flex items-center gap-1 w-fit">
                       <Tv className="h-3 w-3" />
                       <span>Series</span>
