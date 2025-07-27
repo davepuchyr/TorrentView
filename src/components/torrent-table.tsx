@@ -114,7 +114,7 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
             torrents.map((torrent) => (
               <ContextMenu key={torrent.hash}>
                 <ContextMenuTrigger asChild>
-                  <TableRow>
+                  <TableRow className={cn(torrent.is_read && 'text-muted-foreground')}>
                     <TableCell className="font-medium truncate max-w-xs md:max-w-md" title={torrent.name}>{torrent.name}</TableCell>
                     <TableCell>
                       {!torrent.resolution ? (
@@ -184,5 +184,3 @@ export function TorrentTable({ torrents, sortConfig, onSort }: Props) {
     </div>
   );
 }
-
-    

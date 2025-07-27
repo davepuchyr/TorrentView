@@ -14,4 +14,5 @@ export type Torrent = {
   category: string;
   is_series: boolean;
   resolution: number | null;
+  is_read: boolean;
 };

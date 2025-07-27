@@ -22,6 +22,7 @@ export const torrents: Torrent[] = [
     added_on: 1714521600,
     category: 'OS',
     is_series: false,
+    is_read: true,
   },
   {
     hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1',
@@ -36,6 +37,7 @@ export const torrents: Torrent[] = [
     added_on: 1715126400,
     category: 'Software',
     is_series: false,
+    is_read: false,
   },
   {
     hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2',
@@ -50,6 +52,7 @@ export const torrents: Torrent[] = [
     added_on: 1713571200,
     category: 'Books',
     is_series: false,
+    is_read: true,
   },
   {
     hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3',
@@ -64,6 +67,7 @@ export const torrents: Torrent[] = [
     added_on: 1715212800,
     category: 'Software',
     is_series: false,
+    is_read: false,
   },
   {
     hash: 'e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3d4',
@@ -78,6 +82,7 @@ export const torrents: Torrent[] = [
     added_on: 1715385600,
     category: 'OS',
     is_series: false,
+    is_read: false,
   },
   {
     hash: 'f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c3d4e5',
@@ -92,6 +97,7 @@ export const torrents: Torrent[] = [
     added_on: 1712102400,
     category: 'Movies',
     is_series: false,
+    is_read: true,
   },
   {
     hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b3',
@@ -106,6 +112,7 @@ export const torrents: Torrent[] = [
     added_on: 1715040000,
     category: 'Video',
     is_series: false,
+    is_read: true,
   },
   {
     hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a2',
@@ -120,6 +127,7 @@ export const torrents: Torrent[] = [
     added_on: 1715472000,
     category: 'Reference',
     is_series: false,
+    is_read: false,
   },
   {
     hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b3',
@@ -134,6 +142,7 @@ export const torrents: Torrent[] = [
     added_on: 1714867200,
     category: 'Music',
     is_series: false,
+    is_read: true,
   },
   {
     hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2a1b2c4',
@@ -148,6 +157,7 @@ export const torrents: Torrent[] = [
     added_on: 1715299200,
     category: 'Images',
     is_series: false,
+    is_read: false,
   },
   {
     hash: 'g7h8i9j0k1l2g7h8i9j0k1l2g7h8i9j0k1l2g7h8',
@@ -162,6 +172,7 @@ export const torrents: Torrent[] = [
     added_on: 1715558400,
     category: 'Series',
     is_series: true,
+    is_read: false,
   },
   {
     hash: 'h8i9j0k1l2g7h8i9j0k1l2g7h8i9j0k1l2g7h8g7',
@@ -176,6 +187,7 @@ export const torrents: Torrent[] = [
     added_on: 1715644800,
     category: 'Series',
     is_series: true,
+    is_read: true,
   },
 ].map(torrent => ({ 
     ...torrent, 
