@@ -51,6 +51,11 @@ export function TorrentClient() {
             aValue = a[config.key as keyof Torrent];
             bValue = b[config.key as keyof Torrent];
           }
+          
+          if (config.key === 'resolution') {
+            aValue = aValue ?? 0;
+            bValue = bValue ?? 0;
+          }
 
           if (aValue < bValue) {
             return config.direction === 'ascending' ? -1 : 1;
