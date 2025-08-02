@@ -24,6 +24,13 @@ export function TorrentClient() {
     );
   };
 
+  const getDisplayName = (torrent: Torrent) => {
+    if (torrent.resolution && torrent.resolution < 1080) {
+      return torrent.name.replace(`${torrent.resolution}p`, `0${torrent.resolution}p`);
+    }
+    return torrent.name;
+  };
+
   const filteredAndSortedTorrents = useMemo(() => {
     let processableTorrents = [...torrents];
 
@@ -47,6 +54,9 @@ export function TorrentClient() {
             };
             aValue = getType(a);
             bValue = getType(b);
+          } else if (config.key === 'name') {
+            aValue = getDisplayName(a);
+            bValue = getDisplayName(b);
           } else {
             aValue = a[config.key as keyof Torrent];
             bValue = b[config.key as keyof Torrent];
