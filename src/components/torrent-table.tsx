@@ -125,7 +125,9 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                     data-state={selectedTorrent === torrent.hash ? 'selected' : 'unselected'}
                     className={cn('cursor-pointer', torrent.is_read && 'text-muted-foreground', selectedTorrent === torrent.hash && 'text-foreground')}
                   >
-                    <TableCell className="font-medium truncate max-w-xs md:max-w-md" title={torrent.name}>{torrent.name}</TableCell>
+                    <TableCell className="font-medium truncate max-w-xs md:max-w-md" title={torrent.name}>
+                      {torrent.resolution && torrent.resolution < 1080 ? '0' : ''}{torrent.name}
+                    </TableCell>
                     <TableCell>
                       {!torrent.resolution ? (
                         <Badge variant="outline" className="flex items-center gap-1 w-fit">
