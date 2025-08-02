@@ -98,6 +98,13 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
     window.open(getTrailerSearchUrl(torrent.name), '_blank');
   };
 
+  const formatDisplayName = (torrent: Torrent) => {
+    if (torrent.resolution && torrent.resolution < 1080) {
+      return torrent.name.replace(`${torrent.resolution}p`, `0${torrent.resolution}p`);
+    }
+    return torrent.name;
+  };
+
   return (
     <div className="w-full overflow-x-auto">
       <Table>
@@ -126,7 +133,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                     className={cn('cursor-pointer', torrent.is_read && 'text-muted-foreground', selectedTorrent === torrent.hash && 'text-foreground')}
                   >
                     <TableCell className="font-medium truncate max-w-xs md:max-w-md" title={torrent.name}>
-                      {torrent.resolution && torrent.resolution < 1080 ? '0' : ''}{torrent.name}
+                      {formatDisplayName(torrent)}
                     </TableCell>
                     <TableCell>
                       {!torrent.resolution ? (
