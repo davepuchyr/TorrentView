@@ -35,16 +35,11 @@ import { formatBytes } from '@/lib/utils';
 const formSchema = z.object({
   torrentManagementMode: z.string().default("Manual"),
   savePath: z.string().min(1, { message: "Save path is required." }),
-  useAnotherPath: z.boolean().default(false),
-  incompletePath: z.string().optional(),
-  rememberSavePath: z.boolean().default(false),
   startTorrent: z.boolean().default(true),
   stopCondition: z.string().default("None"),
   addToTop: z.boolean().default(false),
-  skipChecking: z.boolean().default(false),
   downloadSequential: z.boolean().default(false),
   downloadFirstLast: z.boolean().default(false),
-  doNotDeleteTorrentFile: z.boolean().default(false),
   contentLayout: z.enum(["Original", "Subfolder", "NoSubfolder"]).default("NoSubfolder"),
 });
 
@@ -68,16 +63,11 @@ export function DownloadOptionsDialog({
     defaultValues: {
       torrentManagementMode: "Manual",
       savePath: "/home/archive/bittorrent",
-      useAnotherPath: false,
-      incompletePath: "",
-      rememberSavePath: false,
       startTorrent: true,
       stopCondition: "None",
       addToTop: false,
-      skipChecking: false,
       downloadSequential: false,
       downloadFirstLast: false,
-      doNotDeleteTorrentFile: false,
       contentLayout: "NoSubfolder",
     },
   });
@@ -87,16 +77,11 @@ export function DownloadOptionsDialog({
       form.reset({
         torrentManagementMode: "Manual",
         savePath: "/home/archive/bittorrent",
-        useAnotherPath: false,
-        incompletePath: "",
-        rememberSavePath: false,
         startTorrent: true,
         stopCondition: "None",
         addToTop: false,
-        skipChecking: false,
         downloadSequential: false,
         downloadFirstLast: false,
-        doNotDeleteTorrentFile: false,
         contentLayout: "NoSubfolder",
       });
     }
@@ -163,57 +148,6 @@ export function DownloadOptionsDialog({
                 )}
               />
               
-              <FormField
-                control={form.control}
-                name="useAnotherPath"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none w-full">
-                      <FormLabel>
-                        Use another path for incomplete torrent
-                      </FormLabel>
-                      {field.value && (
-                        <FormField
-                            control={form.control}
-                            name="incompletePath"
-                            render={({ field }) => (
-                                <FormItem className="mt-2">
-                                    <FormControl>
-                                        <Input placeholder="/path/to/incomplete" {...field} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                      )}
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="rememberSavePath"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      Remember last used save path
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
-
               <Separator />
 
               <h3 className="text-lg font-medium">Torrent options</h3>
@@ -262,18 +196,6 @@ export function DownloadOptionsDialog({
                   />
                    <FormField
                     control={form.control}
-                    name="skipChecking"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel className="font-normal">Skip hash check</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
                     name="downloadSequential"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -293,18 +215,6 @@ export function DownloadOptionsDialog({
                           <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <FormLabel className="font-normal">Download first and last pieces first</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="doNotDeleteTorrentFile"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel className="font-normal">Do not delete .torrent file</FormLabel>
                       </FormItem>
                     )}
                   />
