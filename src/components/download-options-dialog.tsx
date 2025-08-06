@@ -24,19 +24,32 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import type { Torrent } from "@/lib/types";
+import { Separator } from './ui/separator';
+import { formatBytes } from '@/lib/utils';
 
 const formSchema = z.object({
+  torrentManagementMode: z.string().default("Manual"),
   savePath: z.string().min(1, { message: "Save path is required." }),
+  useAnotherPath: z.boolean().default(false),
+  incompletePath: z.string().optional(),
+  rememberSavePath: z.boolean().default(false),
   category: z.string().optional(),
+  setAsDefaultCategory: z.boolean().default(false),
+  tags: z.string().optional(),
   startTorrent: z.boolean().default(true),
-  contentLayout: z.enum(["Original", "Subfolder", "NoSubfolder"]).default("Original"),
+  stopCondition: z.string().default("None"),
+  addToTop: z.boolean().default(false),
   skipChecking: z.boolean().default(false),
-  createSubfolder: z.boolean().default(true),
+  downloadSequential: z.boolean().default(false),
+  downloadFirstLast: z.boolean().default(false),
+  doNotDeleteTorrentFile: z.boolean().default(false),
+  contentLayout: z.enum(["Original", "Subfolder", "NoSubfolder"]).default("NoSubfolder"),
+  neverShowAgain: z.boolean().default(false),
 });
 
 type DownloadOptionsFormValues = z.infer<typeof formSchema>;
@@ -57,24 +70,46 @@ export function DownloadOptionsDialog({
   const form = useForm<DownloadOptionsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      savePath: "/downloads/",
+      torrentManagementMode: "Manual",
+      savePath: "/home/archive/bittorrent",
+      useAnotherPath: false,
+      incompletePath: "",
+      rememberSavePath: false,
       category: torrent?.category || "",
+      setAsDefaultCategory: false,
+      tags: "",
       startTorrent: true,
-      contentLayout: "Subfolder",
+      stopCondition: "None",
+      addToTop: false,
       skipChecking: false,
-      createSubfolder: true,
+      downloadSequential: false,
+      downloadFirstLast: false,
+      doNotDeleteTorrentFile: false,
+      contentLayout: "NoSubfolder",
+      neverShowAgain: false,
     },
   });
 
   React.useEffect(() => {
     if (torrent) {
       form.reset({
-        savePath: "/downloads/",
+        torrentManagementMode: "Manual",
+        savePath: "/home/archive/bittorrent",
+        useAnotherPath: false,
+        incompletePath: "",
+        rememberSavePath: false,
         category: torrent.category,
+        setAsDefaultCategory: false,
+        tags: "",
         startTorrent: true,
-        contentLayout: "Subfolder",
+        stopCondition: "None",
+        addToTop: false,
         skipChecking: false,
-        createSubfolder: true,
+        downloadSequential: false,
+        downloadFirstLast: false,
+        doNotDeleteTorrentFile: false,
+        contentLayout: "NoSubfolder",
+        neverShowAgain: false,
       });
     }
   }, [torrent, form]);
@@ -95,7 +130,7 @@ export function DownloadOptionsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Download Options for "{torrent.name}"</DialogTitle>
           <DialogDescription>
@@ -103,8 +138,30 @@ export function DownloadOptionsDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-4">
+            {/* Left Column */}
             <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="torrentManagementMode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Torrent Management Mode</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a mode" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Manual">Manual</SelectItem>
+                        <SelectItem value="Automatic">Automatic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="savePath"
@@ -114,11 +171,66 @@ export function DownloadOptionsDialog({
                     <FormControl>
                       <Input placeholder="/path/to/downloads" {...field} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
-               <FormField
+              
+              <FormField
+                control={form.control}
+                name="useAnotherPath"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none w-full">
+                      <FormLabel>
+                        Use another path for incomplete torrent
+                      </FormLabel>
+                      {field.value && (
+                        <FormField
+                            control={form.control}
+                            name="incompletePath"
+                            render={({ field }) => (
+                                <FormItem className="mt-2">
+                                    <FormControl>
+                                        <Input placeholder="/path/to/incomplete" {...field} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                      )}
+                    </div>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="rememberSavePath"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Remember last used save path
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+
+              <Separator />
+
+              <h3 className="text-lg font-medium">Torrent options</h3>
+              
+              <FormField
                 control={form.control}
                 name="category"
                 render={({ field }) => (
@@ -127,92 +239,213 @@ export function DownloadOptionsDialog({
                     <FormControl>
                       <Input placeholder="e.g. Movies, Series" {...field} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
+
+               <FormField
+                control={form.control}
+                name="setAsDefaultCategory"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Set as default category
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
-                name="contentLayout"
+                name="tags"
                 render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Content Layout</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="Original" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Original</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="Subfolder" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Create subfolder</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="NoSubfolder" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Don't create subfolder</FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
+                  <FormItem>
+                    <FormLabel>Tags</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input placeholder="Click [...] button to add/remove tags" {...field} />
+                      </FormControl>
+                      <Button type="button" variant="outline" size="icon">...</Button>
+                    </div>
                   </FormItem>
                 )}
               />
-              <div className="flex flex-col space-y-3">
-                <FormField
+
+              <div className="grid grid-cols-2 gap-4">
+                  <FormField
                     control={form.control}
                     name="startTorrent"
                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                            <FormLabel>Start torrent</FormLabel>
-                            <FormDescription>
-                            Start the torrent immediately after adding it.
-                            </FormDescription>
-                        </div>
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
-                            <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            />
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                        </FormItem>
+                        <FormLabel className="font-normal">Start torrent</FormLabel>
+                      </FormItem>
                     )}
-                />
-                <FormField
+                  />
+                  <FormItem>
+                    <FormLabel>Stop condition</FormLabel>
+                    <Select onValueChange={form.setValue.bind(form, 'stopCondition')} defaultValue={form.getValues('stopCondition')}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="None">None</SelectItem>
+                            <SelectItem value="Metadata">Metadata received</SelectItem>
+                            <SelectItem value="Files">Files checked</SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </FormItem>
+
+                   <FormField
+                    control={form.control}
+                    name="addToTop"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="font-normal">Add to top of queue</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
                     control={form.control}
                     name="skipChecking"
                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                            <FormLabel>Skip hash check</FormLabel>
-                             <FormDescription>
-                                Useful for re-seeding a torrent.
-                            </FormDescription>
-                        </div>
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
-                            <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            />
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                        </FormItem>
+                        <FormLabel className="font-normal">Skip hash check</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="downloadSequential"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="font-normal">Download in sequential order</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="downloadFirstLast"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="font-normal">Download first and last pieces first</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="doNotDeleteTorrentFile"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="font-normal">Do not delete .torrent file</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+              </div>
+
+               <FormField
+                control={form.control}
+                name="contentLayout"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Content Layout</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select layout" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Original">Original</SelectItem>
+                        <SelectItem value="Subfolder">Create subfolder</SelectItem>
+                        <SelectItem value="NoSubfolder">Don't create subfolder</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <div className="space-x-2">
+                        <Button type="button" variant="outline">Select All</Button>
+                        <Button type="button" variant="outline">Select None</Button>
+                    </div>
+                    <Input placeholder="Filter files..." className="max-w-xs" />
+                </div>
+                <div className="border rounded-md h-64 overflow-y-auto">
+                    {/* This would be a file tree component in a real app */}
+                    <div className="p-4 text-sm">
+                        <Checkbox id="file" defaultChecked />
+                        <label htmlFor="file" className="ml-2">{torrent.name}</label>
+                        <div className="pl-6 text-muted-foreground">
+                            {formatBytes(torrent.size)}
+                        </div>
+                    </div>
+                </div>
+
+                <Separator />
+                
+                <h3 className="text-lg font-medium">Torrent information</h3>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>Size: {formatBytes(torrent.size)} (Free space on disk: 17.50 GiB)</p>
+                    <p>Date: Not available</p>
+                    <p className="flex items-start">
+                        <span className="font-mono break-all">Info hash v1: {torrent.hash}</span>
+                    </p>
+                    <p>Info hash v2: N/A</p>
+                    <p>Comment:</p>
+                </div>
+                
+                 <FormField
+                    control={form.control}
+                    name="neverShowAgain"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="font-normal">Never show again</FormLabel>
+                      </FormItem>
                     )}
                 />
-              </div>
+
+                <div className="text-sm text-muted-foreground">
+                    Metadata retrieval complete <Button type="button" variant="link" className="p-0 h-auto">Save as .torrent file...</Button>
+                </div>
             </div>
-            <DialogFooter>
+
+            <DialogFooter className="col-span-2">
               <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Start Download</Button>
+              <Button type="submit">OK</Button>
             </DialogFooter>
           </form>
         </Form>
