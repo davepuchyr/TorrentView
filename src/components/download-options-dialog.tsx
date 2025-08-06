@@ -36,7 +36,6 @@ const formSchema = z.object({
   torrentManagementMode: z.string().default("Manual"),
   savePath: z.string().min(1, { message: "Save path is required." }),
   startTorrent: z.boolean().default(true),
-  stopCondition: z.string().default("None"),
   addToTop: z.boolean().default(false),
   downloadSequential: z.boolean().default(false),
   downloadFirstLast: z.boolean().default(false),
@@ -64,7 +63,6 @@ export function DownloadOptionsDialog({
       torrentManagementMode: "Manual",
       savePath: "/home/archive/bittorrent",
       startTorrent: true,
-      stopCondition: "None",
       addToTop: false,
       downloadSequential: false,
       downloadFirstLast: false,
@@ -78,7 +76,6 @@ export function DownloadOptionsDialog({
         torrentManagementMode: "Manual",
         savePath: "/home/archive/bittorrent",
         startTorrent: true,
-        stopCondition: "None",
         addToTop: false,
         downloadSequential: false,
         downloadFirstLast: false,
@@ -166,22 +163,7 @@ export function DownloadOptionsDialog({
                       </FormItem>
                     )}
                   />
-                  <FormItem>
-                    <FormLabel>Stop condition</FormLabel>
-                    <Select onValueChange={form.setValue.bind(form, 'stopCondition')} defaultValue={form.getValues('stopCondition')}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="None">None</SelectItem>
-                            <SelectItem value="Metadata">Metadata received</SelectItem>
-                            <SelectItem value="Files">Files checked</SelectItem>
-                        </SelectContent>
-                    </Select>
-                  </FormItem>
-
+                  
                    <FormField
                     control={form.control}
                     name="addToTop"
