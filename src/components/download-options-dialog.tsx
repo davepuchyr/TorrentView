@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -17,15 +18,12 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import type { Torrent } from "@/lib/types";
@@ -55,7 +53,8 @@ export function DownloadOptionsDialog({
   onClose,
 }: DownloadOptionsDialogProps) {
   const { toast } = useToast();
-  
+  const [areAllFilesSelected, setAreAllFilesSelected] = React.useState(true);
+
   const form = useForm<DownloadOptionsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -78,6 +77,7 @@ export function DownloadOptionsDialog({
         downloadFirstLast: false,
         contentLayout: "NoSubfolder",
       });
+      setAreAllFilesSelected(true);
     }
   }, [torrent, form]);
 
@@ -219,14 +219,18 @@ export function DownloadOptionsDialog({
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
                     <div className="space-x-2">
-                        <Button type="button" variant="outline">Select All</Button>
-                        <Button type="button" variant="outline">Select None</Button>
+                        <Button type="button" variant="outline" onClick={() => setAreAllFilesSelected(true)}>Select All</Button>
+                        <Button type="button" variant="outline" onClick={() => setAreAllFilesSelected(false)}>Select None</Button>
                     </div>
                 </div>
                 <div className="border rounded-md h-[400px] overflow-y-auto">
                     {/* This would be a file tree component in a real app */}
                     <div className="p-4 text-sm">
-                        <Checkbox id="file" defaultChecked />
+                        <Checkbox 
+                          id="file" 
+                          checked={areAllFilesSelected}
+                          onCheckedChange={(checked) => setAreAllFilesSelected(!!checked)}
+                        />
                         <label htmlFor="file" className="ml-2">{torrent.name}</label>
                         <div className="pl-6 text-muted-foreground">
                             {formatBytes(torrent.size)}
