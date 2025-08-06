@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Torrent, TorrentStatus, SortConfig } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { useToast } from '@/hooks/use-toast';
+import { DownloadOptionsDialog } from './download-options-dialog';
 
 type Props = {
   torrents: Torrent[];
@@ -73,6 +75,9 @@ const SortableHeader = ({
 
 export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, onRowClick }: Props) {
   const { toast } = useToast();
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [torrentForModal, setTorrentForModal] = useState<Torrent | null>(null);
+
   const headers: HeaderConfig[] = [
     { key: 'name', label: 'Name', className: 'w-[40%]' },
     { key: 'type', label: 'Type' },
@@ -87,12 +92,16 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
   ];
 
   const handleDownload = (torrent: Torrent) => {
-    // In a real app, this would trigger a backend API call.
+    setTorrentForModal(torrent);
+    setIsDownloadModalOpen(true);
+  };
+  
+  const handleManualDownload = (torrent: Torrent) => {
     toast({
       title: 'Download Started',
       description: `Downloading "${torrent.name}".`,
     });
-  };
+  }
 
   const handlePreview = (torrent: Torrent) => {
     window.open(getTrailerSearchUrl(torrent.name), '_blank');
@@ -106,6 +115,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
   };
 
   return (
+    <>
     <div className="w-full overflow-x-auto">
       <Table>
         <TableHeader>
@@ -187,7 +197,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                   </TableRow>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                  <ContextMenuItem onClick={() => handleDownload(torrent)}>
+                  <ContextMenuItem onClick={() => handleManualDownload(torrent)}>
                     <Download className="mr-2 h-4 w-4" />
                     <span>Download</span>
                   </ContextMenuItem>
@@ -208,5 +218,11 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
         </TableBody>
       </Table>
     </div>
+    <DownloadOptionsDialog
+        torrent={torrentForModal}
+        isOpen={isDownloadModalOpen}
+        onClose={() => setIsDownloadModalOpen(false)}
+    />
+    </>
   );
 }
