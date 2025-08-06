@@ -162,7 +162,9 @@ export function DownloadOptionsDialog({
   const { toast } = useToast();
   const fileTree = React.useMemo(() => torrent?.files ? buildFileTree(torrent.files) : null, [torrent]);
   const allFilePaths = React.useMemo(() => {
-    if (!fileTree) return [];
+    if (!torrent) return [];
+    if (!fileTree) return [torrent.name];
+    
     const paths: string[] = [];
     const traverse = (node: FileTreeNode) => {
         paths.push(node.path);
@@ -170,9 +172,9 @@ export function DownloadOptionsDialog({
             node.children.forEach(traverse);
         }
     }
-    traverse(fileTree);
+    if(fileTree) traverse(fileTree);
     return paths;
-  }, [fileTree]);
+  }, [fileTree, torrent]);
 
   const [selectedFiles, setSelectedFiles] = React.useState(new Set<string>());
 
@@ -204,6 +206,14 @@ export function DownloadOptionsDialog({
 
   const handleSelectionChange = (path: string, selected: boolean) => {
     const newSelectedFiles = new Set(selectedFiles);
+    
+    if (!fileTree) { // Handle single file case
+        if(selected) newSelectedFiles.add(path);
+        else newSelectedFiles.delete(path);
+        setSelectedFiles(newSelectedFiles);
+        return;
+    }
+
     const affectedPaths = new Set<string>();
 
     const findAffected = (node: FileTreeNode) => {
@@ -386,15 +396,18 @@ export function DownloadOptionsDialog({
                 <ScrollArea className="border rounded-md h-[400px]">
                    <div className="p-1">
                     {fileTree ? <FileTree node={fileTree} selectedFiles={selectedFiles} onSelectionChange={handleSelectionChange} /> : (
-                      <div className="p-4 text-sm">
+                      <div className="p-4 text-sm flex items-center">
                           <Checkbox 
                             id="file" 
                             checked={selectedFiles.has(torrent.name)}
                             onCheckedChange={(checked) => handleSelectionChange(torrent.name, !!checked)}
+                            className="mr-2"
                           />
-                          <label htmlFor="file" className="ml-2">{torrent.name}</label>
-                          <div className="pl-6 text-muted-foreground">
-                              {formatBytes(torrent.size)}
+                          <div>
+                            <label htmlFor="file" className="ml-2">{torrent.name}</label>
+                            <div className="pl-2 text-muted-foreground">
+                                {formatBytes(torrent.size)}
+                            </div>
                           </div>
                       </div>
                     )}
@@ -412,3 +425,5 @@ export function DownloadOptionsDialog({
     </Dialog>
   );
 }
+
+    
