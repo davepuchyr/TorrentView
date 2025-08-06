@@ -19,7 +19,12 @@ import { TorrentTable } from '@/components/torrent-table';
 import { Search, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export function TorrentClient() {
+type TorrentClientProps = {
+  backendUrl: string;
+  setBackendUrl: (url: string) => void;
+};
+
+export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps) {
   const { toast } = useToast();
   const [torrents, setTorrents] = useState<Torrent[]>(mockTorrents); 
   const [filter, setFilter] = useState('');
@@ -27,8 +32,12 @@ export function TorrentClient() {
     { key: 'added_on', direction: 'descending' }
   ]);
   const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
-  const [backendUrl, setBackendUrl] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [localBackendUrl, setLocalBackendUrl] = useState(backendUrl);
+
+  useEffect(() => {
+    setLocalBackendUrl(backendUrl);
+  }, [backendUrl]);
 
   const handleRowClick = (hash: string) => {
     setSelectedTorrent(hash);
@@ -142,15 +151,9 @@ export function TorrentClient() {
     };
   }, [handleKeyDown]);
   
-  useEffect(() => {
-    const storedUrl = localStorage.getItem('backendUrl');
-    if (storedUrl) {
-      setBackendUrl(storedUrl);
-    }
-  }, []);
-
   const handleSaveSettings = () => {
-    localStorage.setItem('backendUrl', backendUrl);
+    localStorage.setItem('backendUrl', localBackendUrl);
+    setBackendUrl(localBackendUrl);
     setIsSettingsOpen(false);
     toast({
       title: 'Settings Saved',
@@ -194,8 +197,8 @@ export function TorrentClient() {
                 <Input
                   id="backend-url"
                   className="col-span-3"
-                  value={backendUrl}
-                  onChange={(e) => setBackendUrl(e.target.value)}
+                  value={localBackendUrl}
+                  onChange={(e) => setLocalBackendUrl(e.target.value)}
                   placeholder="http://localhost:8080"
                 />
               </div>
