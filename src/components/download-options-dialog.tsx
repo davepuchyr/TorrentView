@@ -46,7 +46,6 @@ const formSchema = z.object({
   downloadFirstLast: z.boolean().default(false),
   doNotDeleteTorrentFile: z.boolean().default(false),
   contentLayout: z.enum(["Original", "Subfolder", "NoSubfolder"]).default("NoSubfolder"),
-  neverShowAgain: z.boolean().default(false),
 });
 
 type DownloadOptionsFormValues = z.infer<typeof formSchema>;
@@ -80,7 +79,6 @@ export function DownloadOptionsDialog({
       downloadFirstLast: false,
       doNotDeleteTorrentFile: false,
       contentLayout: "NoSubfolder",
-      neverShowAgain: false,
     },
   });
 
@@ -100,7 +98,6 @@ export function DownloadOptionsDialog({
         downloadFirstLast: false,
         doNotDeleteTorrentFile: false,
         contentLayout: "NoSubfolder",
-        neverShowAgain: false,
       });
     }
   }, [torrent, form]);
@@ -344,7 +341,6 @@ export function DownloadOptionsDialog({
                         <Button type="button" variant="outline">Select All</Button>
                         <Button type="button" variant="outline">Select None</Button>
                     </div>
-                    <Input placeholder="Filter files..." className="max-w-xs" />
                 </div>
                 <div className="border rounded-md h-64 overflow-y-auto">
                     {/* This would be a file tree component in a real app */}
@@ -363,26 +359,9 @@ export function DownloadOptionsDialog({
                 <div className="space-y-2 text-sm text-muted-foreground">
                     <p>Size: {formatBytes(torrent.size)} (Free space on disk: 17.50 GiB)</p>
                     <p>Date: Not available</p>
-                    <p className="flex items-start">
-                        <span className="font-mono break-all">Info hash v1: {torrent.hash}</span>
-                    </p>
-                    <p>Info hash v2: N/A</p>
                     <p>Comment:</p>
                 </div>
                 
-                 <FormField
-                    control={form.control}
-                    name="neverShowAgain"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel className="font-normal">Never show again</FormLabel>
-                      </FormItem>
-                    )}
-                />
-
                 <div className="text-sm text-muted-foreground">
                     Metadata retrieval complete <Button type="button" variant="link" className="p-0 h-auto">Save as .torrent file...</Button>
                 </div>
