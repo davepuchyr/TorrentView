@@ -33,7 +33,6 @@ import { Separator } from './ui/separator';
 import { formatBytes } from '@/lib/utils';
 
 const formSchema = z.object({
-  torrentManagementMode: z.string().default("Manual"),
   savePath: z.string().min(1, { message: "Save path is required." }),
   startTorrent: z.boolean().default(true),
   addToTop: z.boolean().default(false),
@@ -60,7 +59,6 @@ export function DownloadOptionsDialog({
   const form = useForm<DownloadOptionsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      torrentManagementMode: "Manual",
       savePath: "/home/archive/bittorrent",
       startTorrent: true,
       addToTop: false,
@@ -73,7 +71,6 @@ export function DownloadOptionsDialog({
   React.useEffect(() => {
     if (torrent) {
       form.reset({
-        torrentManagementMode: "Manual",
         savePath: "/home/archive/bittorrent",
         startTorrent: true,
         addToTop: false,
@@ -111,27 +108,6 @@ export function DownloadOptionsDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-4">
             {/* Left Column */}
             <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="torrentManagementMode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Torrent Management Mode</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a mode" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Manual">Manual</SelectItem>
-                        <SelectItem value="Automatic">Automatic</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="savePath"
@@ -224,28 +200,7 @@ export function DownloadOptionsDialog({
                 )}
               />
 
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <div className="space-x-2">
-                        <Button type="button" variant="outline">Select All</Button>
-                        <Button type="button" variant="outline">Select None</Button>
-                    </div>
-                </div>
-                <div className="border rounded-md h-64 overflow-y-auto">
-                    {/* This would be a file tree component in a real app */}
-                    <div className="p-4 text-sm">
-                        <Checkbox id="file" defaultChecked />
-                        <label htmlFor="file" className="ml-2">{torrent.name}</label>
-                        <div className="pl-6 text-muted-foreground">
-                            {formatBytes(torrent.size)}
-                        </div>
-                    </div>
-                </div>
-
-                <Separator />
+              <Separator />
                 
                 <h3 className="text-lg font-medium">Torrent information</h3>
                 <div className="space-y-2 text-sm text-muted-foreground">
@@ -256,6 +211,27 @@ export function DownloadOptionsDialog({
                 
                 <div className="text-sm text-muted-foreground">
                     Metadata retrieval complete <Button type="button" variant="link" className="p-0 h-auto">Save as .torrent file...</Button>
+                </div>
+
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <div className="space-x-2">
+                        <Button type="button" variant="outline">Select All</Button>
+                        <Button type="button" variant="outline">Select None</Button>
+                    </div>
+                </div>
+                <div className="border rounded-md h-[400px] overflow-y-auto">
+                    {/* This would be a file tree component in a real app */}
+                    <div className="p-4 text-sm">
+                        <Checkbox id="file" defaultChecked />
+                        <label htmlFor="file" className="ml-2">{torrent.name}</label>
+                        <div className="pl-6 text-muted-foreground">
+                            {formatBytes(torrent.size)}
+                        </div>
+                    </div>
                 </div>
             </div>
 
