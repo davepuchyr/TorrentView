@@ -38,9 +38,6 @@ const formSchema = z.object({
   useAnotherPath: z.boolean().default(false),
   incompletePath: z.string().optional(),
   rememberSavePath: z.boolean().default(false),
-  category: z.string().optional(),
-  setAsDefaultCategory: z.boolean().default(false),
-  tags: z.string().optional(),
   startTorrent: z.boolean().default(true),
   stopCondition: z.string().default("None"),
   addToTop: z.boolean().default(false),
@@ -75,9 +72,6 @@ export function DownloadOptionsDialog({
       useAnotherPath: false,
       incompletePath: "",
       rememberSavePath: false,
-      category: torrent?.category || "",
-      setAsDefaultCategory: false,
-      tags: "",
       startTorrent: true,
       stopCondition: "None",
       addToTop: false,
@@ -98,9 +92,6 @@ export function DownloadOptionsDialog({
         useAnotherPath: false,
         incompletePath: "",
         rememberSavePath: false,
-        category: torrent.category,
-        setAsDefaultCategory: false,
-        tags: "",
         startTorrent: true,
         stopCondition: "None",
         addToTop: false,
@@ -230,52 +221,6 @@ export function DownloadOptionsDialog({
 
               <h3 className="text-lg font-medium">Torrent options</h3>
               
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Movies, Series" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-               <FormField
-                control={form.control}
-                name="setAsDefaultCategory"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      Set as default category
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tags</FormLabel>
-                    <div className="flex items-center gap-2">
-                      <FormControl>
-                        <Input placeholder="Click [...] button to add/remove tags" {...field} />
-                      </FormControl>
-                      <Button type="button" variant="outline" size="icon">...</Button>
-                    </div>
-                  </FormItem>
-                )}
-              />
 
               <div className="grid grid-cols-2 gap-4">
                   <FormField
