@@ -128,7 +128,10 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
               <ContextMenu key={torrent.hash}>
                 <ContextMenuTrigger asChild>
                   <TableRow 
-                    onClick={() => onRowClick(torrent.hash)}
+                    onClick={() => {
+                        onRowClick(torrent.hash);
+                        handleDownload(torrent);
+                    }}
                     onAuxClick={(e) => {
                       if (e.button === 1) { // Middle mouse button
                         e.preventDefault();
