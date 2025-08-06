@@ -129,6 +129,12 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                 <ContextMenuTrigger asChild>
                   <TableRow 
                     onClick={() => onRowClick(torrent.hash)}
+                    onAuxClick={(e) => {
+                      if (e.button === 1) { // Middle mouse button
+                        e.preventDefault();
+                        handlePreview(torrent);
+                      }
+                    }}
                     data-state={selectedTorrent === torrent.hash ? 'selected' : 'unselected'}
                     className={cn('cursor-pointer', torrent.is_read && 'text-muted-foreground', selectedTorrent === torrent.hash && 'text-foreground')}
                   >
