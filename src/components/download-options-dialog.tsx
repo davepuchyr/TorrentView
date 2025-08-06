@@ -5,6 +5,7 @@ import * as React from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { ChevronRight, Folder } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,9 +27,10 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import type { Torrent } from "@/lib/types";
+import type { Torrent, TorrentFile } from "@/lib/types";
 import { Separator } from './ui/separator';
-import { formatBytes } from '@/lib/utils';
+import { formatBytes, cn } from '@/lib/utils';
+import { ScrollArea } from './ui/scroll-area';
 
 const formSchema = z.object({
   savePath: z.string().min(1, { message: "Save path is required." }),
@@ -47,13 +49,132 @@ interface DownloadOptionsDialogProps {
   onClose: () => void;
 }
 
+type FileTreeNode = {
+    name: string;
+    path: string;
+    size: number;
+    children?: Map<string, FileTreeNode>;
+    isFile: boolean;
+};
+
+const buildFileTree = (files: TorrentFile[]): FileTreeNode => {
+    const root: FileTreeNode = { name: '/', path: '/', size: 0, children: new Map(), isFile: false };
+
+    files.forEach(file => {
+        let currentNode = root;
+        const parts = file.name.split('/');
+        parts.forEach((part, index) => {
+            if (!currentNode.children) {
+                currentNode.children = new Map();
+            }
+            if (!currentNode.children.has(part)) {
+                const isFile = index === parts.length - 1;
+                const path = parts.slice(0, index + 1).join('/');
+                currentNode.children.set(part, { name: part, path, size: 0, children: isFile ? undefined : new Map(), isFile });
+            }
+            
+            const childNode = currentNode.children.get(part)!;
+            if(index === parts.length - 1){
+                childNode.size = file.size;
+            }
+            currentNode = childNode;
+        });
+    });
+    
+    const calculateFolderSize = (node: FileTreeNode): number => {
+        if(node.isFile) {
+            return node.size;
+        }
+        if (node.children) {
+            node.size = Array.from(node.children.values()).reduce((sum, child) => sum + calculateFolderSize(child), 0);
+        }
+        return node.size;
+    }
+    
+    calculateFolderSize(root);
+
+    return root;
+}
+
+const FileTree = ({ node, level = 0, selectedFiles, onSelectionChange }: { node: FileTreeNode, level?: number, selectedFiles: Set<string>, onSelectionChange: (path: string, selected: boolean) => void }) => {
+    const [isOpen, setIsOpen] = React.useState(level < 1);
+    const isSelected = selectedFiles.has(node.path);
+
+    const handleCheckedChange = (checked: boolean) => {
+        onSelectionChange(node.path, checked);
+    };
+
+    if (node.name === '/' && node.children) {
+        return (
+            <div>
+                {Array.from(node.children.values()).map(child => (
+                    <FileTree key={child.path} node={child} level={level} selectedFiles={selectedFiles} onSelectionChange={onSelectionChange} />
+                ))}
+            </div>
+        );
+    }
+    
+    const isDirectory = !node.isFile;
+
+    return (
+        <div>
+            <div className={cn("flex items-center text-sm p-1 rounded-md hover:bg-accent", { 'bg-accent/50': isSelected })}>
+                <div style={{ paddingLeft: `${level * 1.5}rem` }} className="flex items-center flex-grow truncate">
+                    <Checkbox
+                        id={`file-${node.path}`}
+                        checked={isSelected}
+                        onCheckedChange={handleCheckedChange}
+                        className="mr-2"
+                    />
+                    {isDirectory && (
+                        <ChevronRight
+                            className={cn("h-4 w-4 mr-1 transition-transform", { "rotate-90": isOpen })}
+                            onClick={() => setIsOpen(!isOpen)}
+                        />
+                    )}
+                     {!isDirectory && <div className="w-5 mr-1" />}
+                    <label htmlFor={`file-${node.path}`} className="truncate flex-grow flex items-center gap-1">
+                        {isDirectory && <Folder className="h-4 w-4 text-primary" />}
+                        {node.name}
+                    </label>
+                </div>
+                <div className="text-muted-foreground text-xs tabular-nums pr-2">
+                    {formatBytes(node.size)}
+                </div>
+            </div>
+            {isDirectory && isOpen && node.children && (
+                <div>
+                    {Array.from(node.children.values()).map(child => (
+                        <FileTree key={child.path} node={child} level={level + 1} selectedFiles={selectedFiles} onSelectionChange={onSelectionChange} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+
 export function DownloadOptionsDialog({
   torrent,
   isOpen,
   onClose,
 }: DownloadOptionsDialogProps) {
   const { toast } = useToast();
-  const [areAllFilesSelected, setAreAllFilesSelected] = React.useState(true);
+  const fileTree = React.useMemo(() => torrent?.files ? buildFileTree(torrent.files) : null, [torrent]);
+  const allFilePaths = React.useMemo(() => {
+    if (!fileTree) return [];
+    const paths: string[] = [];
+    const traverse = (node: FileTreeNode) => {
+        paths.push(node.path);
+        if (node.children) {
+            node.children.forEach(traverse);
+        }
+    }
+    traverse(fileTree);
+    return paths;
+  }, [fileTree]);
+
+  const [selectedFiles, setSelectedFiles] = React.useState(new Set<string>());
 
   const form = useForm<DownloadOptionsFormValues>({
     resolver: zodResolver(formSchema),
@@ -77,13 +198,52 @@ export function DownloadOptionsDialog({
         downloadFirstLast: false,
         contentLayout: "NoSubfolder",
       });
-      setAreAllFilesSelected(true);
+      setSelectedFiles(new Set(allFilePaths));
     }
-  }, [torrent, form]);
+  }, [torrent, form, allFilePaths]);
+
+  const handleSelectionChange = (path: string, selected: boolean) => {
+    const newSelectedFiles = new Set(selectedFiles);
+    const affectedPaths = new Set<string>();
+
+    const findAffected = (node: FileTreeNode) => {
+      if(node.path.startsWith(path)) {
+        affectedPaths.add(node.path);
+        if(node.children){
+          node.children.forEach(findAffected);
+        }
+      }
+    }
+
+    if (fileTree) {
+      const findNode = (node: FileTreeNode, targetPath: string): FileTreeNode | null => {
+        if (node.path === targetPath) return node;
+        if(node.children) {
+          for(const child of Array.from(node.children.values())) {
+            const found = findNode(child, targetPath);
+            if(found) return found;
+          }
+        }
+        return null;
+      }
+      const startNode = findNode(fileTree, path);
+      if(startNode) {
+        findAffected(startNode);
+      }
+    }
+    
+    affectedPaths.forEach(p => {
+        if(selected) newSelectedFiles.add(p);
+        else newSelectedFiles.delete(p);
+    });
+
+    setSelectedFiles(newSelectedFiles);
+  }
 
   const onSubmit = (data: DownloadOptionsFormValues) => {
     // In a real app, this would trigger a backend API call with the selected options.
     console.log("Download options:", data);
+    console.log("Selected files:", Array.from(selectedFiles));
     toast({
       title: "Download Started",
       description: `Downloading "${torrent?.name}" with custom options.`,
@@ -219,24 +379,27 @@ export function DownloadOptionsDialog({
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
                     <div className="space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setAreAllFilesSelected(true)}>Select All</Button>
-                        <Button type="button" variant="outline" onClick={() => setAreAllFilesSelected(false)}>Select None</Button>
+                        <Button type="button" variant="outline" onClick={() => setSelectedFiles(new Set(allFilePaths))}>Select All</Button>
+                        <Button type="button" variant="outline" onClick={() => setSelectedFiles(new Set())}>Select None</Button>
                     </div>
                 </div>
-                <div className="border rounded-md h-[400px] overflow-y-auto">
-                    {/* This would be a file tree component in a real app */}
-                    <div className="p-4 text-sm">
-                        <Checkbox 
-                          id="file" 
-                          checked={areAllFilesSelected}
-                          onCheckedChange={(checked) => setAreAllFilesSelected(!!checked)}
-                        />
-                        <label htmlFor="file" className="ml-2">{torrent.name}</label>
-                        <div className="pl-6 text-muted-foreground">
-                            {formatBytes(torrent.size)}
-                        </div>
-                    </div>
-                </div>
+                <ScrollArea className="border rounded-md h-[400px]">
+                   <div className="p-1">
+                    {fileTree ? <FileTree node={fileTree} selectedFiles={selectedFiles} onSelectionChange={handleSelectionChange} /> : (
+                      <div className="p-4 text-sm">
+                          <Checkbox 
+                            id="file" 
+                            checked={selectedFiles.has(torrent.name)}
+                            onCheckedChange={(checked) => handleSelectionChange(torrent.name, !!checked)}
+                          />
+                          <label htmlFor="file" className="ml-2">{torrent.name}</label>
+                          <div className="pl-6 text-muted-foreground">
+                              {formatBytes(torrent.size)}
+                          </div>
+                      </div>
+                    )}
+                   </div>
+                </ScrollArea>
             </div>
 
             <DialogFooter className="col-span-2">

@@ -1,4 +1,11 @@
+
 export type TorrentStatus = 'downloading' | 'seeding' | 'completed' | 'paused' | 'error';
+
+export type TorrentFile = {
+  name: string;
+  size: number;
+  progress: number;
+};
 
 export type Torrent = {
   hash: string;
@@ -15,6 +22,7 @@ export type Torrent = {
   is_series: boolean;
   resolution: number | null;
   is_read: boolean;
+  files?: TorrentFile[];
 };
 
 export type SortConfig = {

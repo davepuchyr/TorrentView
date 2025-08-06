@@ -1,3 +1,4 @@
+
 import type { Torrent } from './types';
 
 const seriesRegex = /\bS\d{1,2}E\d{1,2}\b/i;
@@ -188,6 +189,13 @@ export const torrents: Torrent[] = [
     category: 'Series',
     is_series: true,
     is_read: true,
+    files: [
+        { name: 'The.Good.Place.S04E13.720p.mkv', size: 524288000, progress: 1 },
+        { name: 'Subs/English.srt', size: 104857, progress: 1 },
+        { name: 'Subs/French/FR.srt', size: 115343, progress: 1 },
+        { name: 'Subs/French/Bonus/Interview.srt', size: 52428, progress: 1 },
+        { name: 'Sample/sample.mkv', size: 12373196, progress: 1 },
+    ]
   },
   {
     hash: 'i9j0k1l2g7h8i9j0k1l2g7h8i9j0k1l2g7h8g7h8',
