@@ -1,31 +1,30 @@
-
-export type TorrentStatus = 'downloading' | 'seeding' | 'completed' | 'paused' | 'error';
+export type TorrentStatus = "downloading" | "seeding" | "completed" | "paused" | "error";
 
 export type TorrentFile = {
-  name: string;
-  size: number;
-  progress: number;
+   name: string;
+   size: number;
+   progress: number;
 };
 
 export type Torrent = {
-  hash: string;
-  name: string;
-  size: number; // in bytes
-  progress: number; // 0-1
-  status: TorrentStatus;
-  dlspeed: number; // bytes/s
-  upspeed: number; // bytes/s
-  eta: number; // seconds
-  ratio: number;
-  added_on: number; // timestamp
-  category: string;
-  is_series: boolean;
-  resolution: number | null;
-  is_read: boolean;
-  files?: TorrentFile[];
+   hash: string;
+   name: string;
+   size: number; // in bytes
+   progress: number; // 0-1
+   status: TorrentStatus;
+   dlspeed: number; // bytes/s
+   upspeed: number; // bytes/s
+   eta: number; // seconds
+   ratio: number;
+   added_on: number; // timestamp
+   category: string;
+   is_series: boolean;
+   resolution: number | null;
+   is_read: boolean;
+   files?: TorrentFile[];
 };
 
 export type SortConfig = {
-  key: keyof Torrent | 'type';
-  direction: 'ascending' | 'descending';
+   key: keyof Torrent | "type";
+   direction: "ascending" | "descending";
 };
