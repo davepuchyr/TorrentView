@@ -7,7 +7,8 @@ const getResolution = (name: string): number | null => {
    const match = name.match(resolutionRegex);
    return match ? parseInt(match[1], 10) : null;
 };
-
+// This file is no longer used to populate the torrents table,
+// but is kept to provide a reference for the data structure and for testing purposes.
 export const torrents: Torrent[] = [
    {
       hash: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
@@ -243,6 +244,6 @@ export const torrents: Torrent[] = [
    },
 ].map(torrent => ({
    ...torrent,
-   is_series: seriesRegex.test(torrent.name),
    resolution: getResolution(torrent.name),
+   is_series: seriesRegex.test(torrent.name),
 }));

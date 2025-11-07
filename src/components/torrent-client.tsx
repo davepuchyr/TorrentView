@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { torrents as mockTorrents } from "@/lib/data";
 import type { Torrent, SortConfig } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,9 +23,17 @@ type TorrentClientProps = {
    setBackendUrl: (url: string) => void;
 };
 
+const seriesRegex = /\bS\d{1,2}E\d{1,2}\b/i;
+const resolutionRegex = /(\d{3,4})p/i;
+
+const getResolution = (name: string): number | null => {
+   const match = name.match(resolutionRegex);
+   return match ? parseInt(match[1], 10) : null;
+};
+
 export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps) {
    const { toast } = useToast();
-   const [torrents, setTorrents] = useState<Torrent[]>(mockTorrents);
+   const [torrents, setTorrents] = useState<Torrent[]>([]);
    const [filter, setFilter] = useState("");
    const [sortConfig, setSortConfig] = useState<SortConfig[]>([{ key: "added_on", direction: "descending" }]);
    const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
@@ -36,6 +43,56 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
    useEffect(() => {
       setLocalBackendUrl(backendUrl);
    }, [backendUrl]);
+
+   useEffect(() => {
+      if (!backendUrl) {
+         setTorrents([]);
+         return;
+      }
+
+      const fetchTorrents = async () => {
+         try {
+            const response = await fetch(`${backendUrl}/api/v2/torrents/info`);
+            if (!response.ok) {
+               throw new Error(`Failed to fetch torrents: ${response.statusText}`);
+            }
+            const data = await response.json();
+
+            const mappedTorrents: Torrent[] = data.map((item: any) => ({
+               hash: item.hash,
+               name: item.name,
+               size: item.size,
+               progress: item.progress,
+               status: item.state,
+               dlspeed: item.dlspeed,
+               upspeed: item.upspeed,
+               eta: item.eta,
+               ratio: item.ratio,
+               added_on: item.added_on,
+               category: item.category,
+               is_series: seriesRegex.test(item.name),
+               resolution: getResolution(item.name),
+               is_read: false, // Assuming unread initially
+               files: item.files,
+            }));
+
+            setTorrents(mappedTorrents);
+         } catch (error: any) {
+            console.error("Error fetching torrents:", error);
+            toast({
+               variant: "destructive",
+               title: "Failed to connect",
+               description: `Could not fetch data from ${backendUrl}. Please check the URL and your connection.`,
+            });
+            setTorrents([]);
+         }
+      };
+
+      fetchTorrents();
+      const interval = setInterval(fetchTorrents, 5000); // Poll every 5 seconds
+
+      return () => clearInterval(interval);
+   }, [backendUrl, toast]);
 
    const handleRowClick = (hash: string) => {
       setSelectedTorrent(hash);
