@@ -193,7 +193,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                  <TableCell className="whitespace-nowrap text-right">{formatSpeed(torrent.dlspeed)}</TableCell>
                                  <TableCell className="whitespace-nowrap text-right">{formatSpeed(torrent.upspeed)}</TableCell>
                                  <TableCell className="text-right">{formatEta(torrent.eta)}</TableCell>
-                                 <TableCell className="text-right">{torrent.ratio.toFixed(2)}</TableCell>
+                                 <TableCell className="text-right">{torrent.ratio?.toFixed(2)}</TableCell>
                               </TableRow>
                            </ContextMenuTrigger>
                            <ContextMenuContent>

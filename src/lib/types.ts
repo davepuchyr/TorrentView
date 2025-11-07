@@ -1,9 +1,28 @@
-export type TorrentStatus = "downloading" | "seeding" | "completed" | "paused" | "error";
+export type Article = {
+   category: string;
+   contentLength: string;
+   date: string;
+   fileName: string;
+   id: string;
+   infoHash: string;
+   isRead: boolean;
+   link: string;
+   magnetURI: string;
+   peers: string;
+   seeds: string;
+   title: string;
+   torrentURL: string;
+   verified: string;
+};
 
-export type TorrentFile = {
-   name: string;
-   size: number;
-   progress: number;
+export type Feed = {
+   articles: Article[];
+   hasError: boolean;
+   isLoading: boolean;
+   lastBuildDate: string;
+   title: string;
+   uid: string;
+   url: string;
 };
 
 export type Torrent = {
@@ -23,6 +42,14 @@ export type Torrent = {
    is_read: boolean;
    files?: TorrentFile[];
 };
+
+export type TorrentFile = {
+   name: string;
+   size: number;
+   progress: number;
+};
+
+export type TorrentStatus = "downloading" | "seeding" | "completed" | "paused" | "error";
 
 export type SortConfig = {
    key: keyof Torrent | "type";

@@ -1,17 +1,18 @@
 import type { TorrentStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2, PauseCircle, XCircle } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2, PauseCircle, XCircle, FileArchiveIcon } from "lucide-react";
 
 const statusConfig = {
-   downloading: { icon: ArrowDownToLine, color: "text-primary", label: "Downloading" },
-   seeding: { icon: ArrowUpFromLine, color: "text-[hsl(var(--chart-2))]", label: "Seeding" },
+   available: { icon: FileArchiveIcon, color: "text-muted-foreground", label: "" },
    completed: { icon: CheckCircle2, color: "text-muted-foreground", label: "Completed" },
-   paused: { icon: PauseCircle, color: "text-[hsl(var(--chart-4))]", label: "Paused" },
+   downloading: { icon: ArrowDownToLine, color: "text-primary", label: "Downloading" },
    error: { icon: XCircle, color: "text-destructive", label: "Error" },
+   paused: { icon: PauseCircle, color: "text-[hsl(var(--chart-4))]", label: "Paused" },
+   seeding: { icon: ArrowUpFromLine, color: "text-[hsl(var(--chart-2))]", label: "Seeding" },
 };
 
 export function TorrentStatusIcon({ status }: { status: TorrentStatus }) {
-   const { icon: Icon, color, label } = statusConfig[status];
+   const { icon: Icon, color, label } = statusConfig[status || "available"];
 
    return (
       <div className={cn("flex items-center gap-2 text-sm", color)}>
