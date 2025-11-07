@@ -147,15 +147,15 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                     {formatDisplayName(torrent)}
                                  </TableCell>
                                  <TableCell>
-                                    {!torrent.resolution ? (
+                                    {torrent.category == "TV" ? (
                                        <Badge variant="outline" className="flex w-fit items-center gap-1">
                                           <HelpCircle className="h-3 w-3" />
-                                          <span>Other</span>
+                                          <span>Series</span>
                                        </Badge>
-                                    ) : torrent.is_series ? (
+                                    ) : !torrent.resolution ? (
                                        <Badge variant="outline" className="flex w-fit items-center gap-1">
                                           <Tv className="h-3 w-3" />
-                                          <span>Series</span>
+                                          <span>Other</span>
                                        </Badge>
                                     ) : (
                                        <Badge variant="secondary" className="flex w-fit items-center gap-1">

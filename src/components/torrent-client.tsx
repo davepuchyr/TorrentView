@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import type { Article, Feed, Torrent, SortConfig } from "@/lib/types";
+import type { Torrent, SortConfig } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,14 +21,6 @@ import { useToast } from "@/hooks/use-toast";
 type TorrentClientProps = {
    backendUrl: string;
    setBackendUrl: (url: string) => void;
-};
-
-const seriesRegex = /S\d{1,2}(E\d{1,2})?(.*complete)/i;
-const resolutionRegex = /(\d{3,4})p/i;
-
-const getResolution = (name: string): number | null => {
-   const match = name.match(resolutionRegex);
-   return match ? parseInt(match[1], 10) : null;
 };
 
 export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps) {
@@ -73,27 +65,9 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
                if (data.type === "connected") {
                   setConnectionStatus("connected");
                   reconnectAttempts = 0; // Reset on successful connection
-               } else if (data.type === "update" && data.articles) {
-                  const articles: Article[] = data.articles;
-                  const mappedTorrents: Torrent[] = articles.map((article: any) => ({
-                     hash: article.torrentURL,
-                     name: article.title,
-                     size: article.contentLength,
-                     progress: article.progress,
-                     status: article.state,
-                     dlspeed: article.dlspeed,
-                     upspeed: article.upspeed,
-                     eta: article.eta,
-                     ratio: article.ratio,
-                     added_on: article.added_on,
-                     category: article.category,
-                     is_series: seriesRegex.test(article.title),
-                     resolution: getResolution(article.title),
-                     is_read: article.isRead,
-                     files: article.files,
-                  }));
-
-                  setTorrents(mappedTorrents);
+               } else if (data.type === "update" && data.torrents) {
+                  const torrents: Torrent[] = data.torrents;
+                  setTorrents(torrents);
                   setConnectionStatus("connected");
                } else if (data.type === "error") {
                   console.error("SSE Error:", data.message);
@@ -147,8 +121,23 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
    }, [backendUrl, toast]);
 
    const handleRowClick = (hash: string) => {
+      const torrent = torrents.find(t => t.hash == hash)!;
+      torrent.is_read = true;
+
       setSelectedTorrent(hash);
-      setTorrents(prevTorrents => prevTorrents.map(t => (t.hash === hash && !t.is_read ? { ...t, is_read: true } : t)));
+      setTorrents(prevTorrents => prevTorrents.map(t => (t.hash === hash ? torrent : t)));
+      fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`, {
+         headers: {
+            "accept": "*/*",
+            "accept-language": "en-US,en;q=0.7",
+            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "sec-gpc": "1",
+         },
+         body: JSON.stringify(torrent),
+         method: "POST",
+         mode: "cors",
+         credentials: "include",
+      });
    };
 
    const getDisplayName = (torrent: Torrent) => {

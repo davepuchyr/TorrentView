@@ -26,21 +26,23 @@ export type Feed = {
 };
 
 export type Torrent = {
-   hash: string;
-   name: string;
-   size: number; // in bytes
-   progress: number; // 0-1
-   status: TorrentStatus;
-   dlspeed: number; // bytes/s
-   upspeed: number; // bytes/s
-   eta: number; // seconds
-   ratio: number;
    added_on: number; // timestamp
    category: string;
-   is_series: boolean;
-   resolution: number | null;
-   is_read: boolean;
+   dlspeed: number; // bytes/s
+   eta: number; // seconds
+   feed: string;
    files?: TorrentFile[];
+   hash: string;
+   id: string;
+   is_read: boolean;
+   is_series: boolean;
+   name: string;
+   progress: number; // 0-1
+   ratio: number;
+   resolution: number | null;
+   size: number; // in bytes
+   status: TorrentStatus;
+   upspeed: number; // bytes/s
 };
 
 export type TorrentFile = {
@@ -49,7 +51,7 @@ export type TorrentFile = {
    progress: number;
 };
 
-export type TorrentStatus = "downloading" | "seeding" | "completed" | "paused" | "error";
+export type TorrentStatus = "available" | "completed" | "downloading" | "error" | "paused" | "seeding";
 
 export type SortConfig = {
    key: keyof Torrent | "type";
