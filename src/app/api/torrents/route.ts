@@ -119,9 +119,10 @@ export async function POST(request: NextRequest) {
    const feed = encodeURIComponent(body.feed);
    const id = encodeURIComponent(body.id);
    const url = `${backendUrl}/api/v2/rss/markAsRead`;
+   let fetched: Response;
 
    try {
-      const fetched = await fetch(url, {
+      fetched = await fetch(url, {
          headers: {
             "accept": "*/*",
             "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
@@ -131,7 +132,9 @@ export async function POST(request: NextRequest) {
       });
       if (fetched.status == 200) console.log(`Marked ${body.feed}.${body.id} as read.`);
    } catch (e) {
-      console.error("Failed to mark as read:", e);
+      console.error(`Failed to mark ${body.feed}.${body.id} as read:`, e);
       return NextResponse.json({ error: `Failed to POST to ${url}` }, { status: 502 });
    }
+
+   return new NextResponse(fetched.body, { status: fetched.status, headers: fetched.headers });
 }
