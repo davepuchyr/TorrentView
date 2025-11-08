@@ -54,11 +54,7 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
             try {
                const data = JSON.parse(event.data);
                if (data.type === "torrents") {
-                  setTorrents(prevTorrents => {
-                     const newTorrents: Torrent[] = data.data;
-                     const readHashes = new Set(prevTorrents.filter(t => t.is_read).map(t => t.hash));
-                     return newTorrents.map(t => ({ ...t, is_read: readHashes.has(t.hash) }));
-                  });
+                  setTorrents(data.data);
                   setConnectionStatus("connected");
                } else if (data.type === "error") {
                   console.error("SSE Error:", data.message);
