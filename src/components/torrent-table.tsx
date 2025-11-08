@@ -138,11 +138,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                     }
                                  }}
                                  data-state={selectedTorrent === torrent.hash ? "selected" : "unselected"}
-                                 className={cn(
-                                    "cursor-pointer",
-                                    torrent.is_read && "text-muted-foreground",
-                                    selectedTorrent === torrent.hash && "text-foreground",
-                                 )}>
+                                 className={cn("cursor-pointer", torrent.is_read && "text-muted-foreground")}>
                                  <TableCell className="max-w-xs truncate font-medium md:max-w-md" title={torrent.name}>
                                     {formatDisplayName(torrent)}
                                  </TableCell>
