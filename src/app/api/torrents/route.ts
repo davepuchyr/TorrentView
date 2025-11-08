@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
    }
 
    const urlRSS = `${backendUrl}/api/v2/rss/items?withData=true`;
-
+   let intervalId: string | number | NodeJS.Timeout | undefined;
    const stream = new ReadableStream({
       async start(controller) {
          const sendEvent = (data: object) => {
@@ -90,11 +90,17 @@ export async function GET(request: NextRequest) {
          };
 
          await fetchData();
-         const intervalId = setInterval(fetchData, 7000);
+         // Set up polling every 7 minutes in conjunction with the 15 minute refresh cycle in qbittorrent.
+         intervalId = setInterval(fetchData, 7 * 1000 * 60); // HARD-CODED
 
-         // It seems there's no direct way to detect client disconnect in a standard Next.js route handler
-         // to clear the interval. The connection will be closed by the server/client eventually.
-         // For long-running processes, a more robust solution with a proper lifecycle might be needed.
+         // Handle client disconnect.
+         request.signal.addEventListener("abort", () => {
+            clearInterval(intervalId);
+            controller.close();
+         });
+      },
+      cancel() {
+         clearInterval(intervalId);
       },
    });
 
