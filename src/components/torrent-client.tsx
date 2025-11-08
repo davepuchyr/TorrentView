@@ -84,22 +84,24 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
    }, [backendUrl, setTorrents]);
 
    const handleRowClick = (hash: string) => {
-      const torrent = torrents.find(t => t.hash == hash);
-      if (torrent && !torrent.is_read) {
-         const newTorrents = torrents.map(t => (t.hash === hash ? { ...t, is_read: true } : t));
-         setTorrents(newTorrents);
-         setSelectedTorrent(hash);
+      setSelectedTorrent(hash);
 
-         fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ feed: torrent.feed, id: torrent.id }),
-         });
-      } else {
-         setSelectedTorrent(hash);
-      }
+      const torrent = torrents.find(t => t.hash == hash)!; // It will be found, obviously.
+
+      if (torrent.is_read) return; // short-circuit
+
+      torrent.is_read = true;
+      const newTorrents = [...torrents];
+      setTorrents(newTorrents);
+
+      // Don't bother await'ing on it, just mark it as read on the backend.
+      fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`, {
+         method: "POST",
+         headers: {
+            "Content-Type": "application/json",
+         },
+         body: JSON.stringify({ feed: torrent.feed, id: torrent.id }),
+      });
    };
 
    const getDisplayName = (torrent: Torrent) => {
