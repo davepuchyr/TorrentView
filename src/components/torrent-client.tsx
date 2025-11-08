@@ -184,6 +184,8 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
 
    const handleKeyDown = useCallback(
       (event: KeyboardEvent) => {
+         if (isSettingsOpen) return;
+
          if (event.key === "j" || event.key === "ArrowDown") {
             event.preventDefault();
             const currentIndex = filteredAndSortedTorrents.findIndex(t => t.hash === selectedTorrent);
@@ -196,7 +198,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
             handleRowClick(filteredAndSortedTorrents[prevIndex].hash);
          }
       },
-      [filteredAndSortedTorrents, selectedTorrent, handleRowClick],
+      [filteredAndSortedTorrents, selectedTorrent, handleRowClick, isSettingsOpen],
    );
 
    useEffect(() => {
