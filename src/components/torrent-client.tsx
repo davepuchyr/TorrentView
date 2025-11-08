@@ -31,7 +31,6 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
    const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
    const [localBackendUrl, setLocalBackendUrl] = useState(backendUrl);
-   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("disconnected");
 
    useEffect(() => {
       setLocalBackendUrl(backendUrl);
@@ -40,104 +39,56 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
    useEffect(() => {
       if (!backendUrl) {
          setTorrents([]);
-         setConnectionStatus("disconnected");
          return;
       }
 
-      let eventSource: EventSource | null = null;
-      let reconnectTimeout: NodeJS.Timeout;
-      let reconnectAttempts = 0;
-      const maxReconnectAttempts = 5;
-      const reconnectDelay = 2000; // 2 seconds
-
-      const connect = () => {
-         if (eventSource) {
-            eventSource.close();
+      const fetchTorrents = async () => {
+         try {
+            const response = await fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`);
+            if (!response.ok) {
+               throw new Error("Failed to fetch torrents");
+            }
+            const data: Torrent[] = await response.json();
+            // Preserve is_read status on refresh
+            setTorrents(prevTorrents => {
+               const newTorrents = [...data];
+               const readHashes = new Set(prevTorrents.filter(t => t.is_read).map(t => t.hash));
+               return newTorrents.map(t => ({ ...t, is_read: readHashes.has(t.hash) }));
+            });
+         } catch (error) {
+            console.error("Error fetching torrents:", error);
+            toast({
+               variant: "destructive",
+               title: "Fetch Error",
+               description: "Could not fetch torrent data. Please check the backend URL and your connection.",
+            });
+            setTorrents([]);
          }
-
-         setConnectionStatus("connecting");
-         eventSource = new EventSource(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`);
-
-         eventSource.onmessage = event => {
-            try {
-               const data = JSON.parse(event.data);
-
-               if (data.type === "connected") {
-                  setConnectionStatus("connected");
-                  reconnectAttempts = 0; // Reset on successful connection
-               } else if (data.type === "update" && data.torrents) {
-                  const torrents: Torrent[] = data.torrents;
-                  setTorrents(torrents);
-                  setConnectionStatus("connected");
-               } else if (data.type === "error") {
-                  console.error("SSE Error:", data.message);
-                  setConnectionStatus("error");
-               }
-            } catch (error) {
-               console.error("Error parsing SSE data:", error);
-               setConnectionStatus("error");
-            }
-         };
-
-         eventSource.onerror = error => {
-            console.error("EventSource error:", error);
-            setConnectionStatus("error");
-
-            // Attempt to reconnect if under max attempts
-            if (reconnectAttempts < maxReconnectAttempts) {
-               reconnectAttempts++;
-               console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
-
-               reconnectTimeout = setTimeout(() => {
-                  connect();
-               }, reconnectDelay * reconnectAttempts); // Exponential backoff
-            } else {
-               toast({
-                  variant: "destructive",
-                  title: "Connection Failed",
-                  description: `Could not connect to ${backendUrl} after ${maxReconnectAttempts} attempts. Please check the URL and your connection.`,
-               });
-               setTorrents([]);
-            }
-         };
-
-         eventSource.onopen = () => {
-            console.log("SSE connection opened");
-            setConnectionStatus("connected");
-            reconnectAttempts = 0;
-         };
       };
 
-      connect();
+      fetchTorrents();
+      const intervalId = setInterval(fetchTorrents, 7000); // Poll every 7 seconds
 
-      return () => {
-         if (eventSource) {
-            eventSource.close();
-         }
-         if (reconnectTimeout) {
-            clearTimeout(reconnectTimeout);
-         }
-      };
+      return () => clearInterval(intervalId);
    }, [backendUrl, toast]);
 
    const handleRowClick = (hash: string) => {
-      const torrent = torrents.find(t => t.hash == hash)!;
-      torrent.is_read = true;
+      const torrent = torrents.find(t => t.hash == hash);
+      if (torrent && !torrent.is_read) {
+         const newTorrents = torrents.map(t => (t.hash === hash ? { ...t, is_read: true } : t));
+         setTorrents(newTorrents);
+         setSelectedTorrent(hash);
 
-      setSelectedTorrent(hash);
-      setTorrents(prevTorrents => prevTorrents.map(t => (t.hash === hash ? torrent : t)));
-      fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`, {
-         headers: {
-            "accept": "*/*",
-            "accept-language": "en-US,en;q=0.7",
-            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-            "sec-gpc": "1",
-         },
-         body: JSON.stringify(torrent),
-         method: "POST",
-         mode: "cors",
-         credentials: "include",
-      });
+         fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`, {
+            method: "POST",
+            headers: {
+               "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ feed: torrent.feed, id: torrent.id }),
+         });
+      } else {
+         setSelectedTorrent(hash);
+      }
    };
 
    const getDisplayName = (torrent: Torrent) => {
