@@ -104,11 +104,10 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
       });
    };
 
-   const getDisplayName = (torrent: Torrent) => {
-      if (torrent.resolution && torrent.resolution < 1080) {
-         return torrent.name.replace(`${torrent.resolution}p`, `0${torrent.resolution}p`);
-      }
-      return torrent.name;
+   const getType = (t: Torrent) => {
+      if (!t.resolution) return 2; // Other
+      if (t.is_series) return 1; // Series
+      return 0; // Movie
    };
 
    const filteredAndSortedTorrents = useMemo(() => {
@@ -125,16 +124,14 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
                let bValue: any;
 
                if (config.key === "type") {
-                  const getType = (t: Torrent) => {
-                     if (!t.resolution) return 2; // Other
-                     if (t.is_series) return 0; // Series
-                     return 1; // Movie
-                  };
                   aValue = getType(a);
                   bValue = getType(b);
                } else if (config.key === "name") {
-                  aValue = getDisplayName(a);
-                  bValue = getDisplayName(b);
+                  aValue = a.name;
+                  bValue = b.name;
+               } else if (config.key === "size") {
+                  aValue = a.bytes ?? 0;
+                  bValue = b.bytes ?? 0;
                } else {
                   aValue = a[config.key as keyof Torrent];
                   bValue = b[config.key as keyof Torrent];

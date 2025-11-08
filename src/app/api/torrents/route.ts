@@ -1,12 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Torrent } from "@/lib/types";
 
-const regexSeries = /S\d{1,2}(E\d{1,2})?(.*complete)?/i;
 const regexResolution = /(\d{3,4})p/i;
+const regexSeries = /(S\d{1,2}(E\d{1,2})?)(.*complete)?/i;
+const regexSize = /\b\d+(?:\.\d+)?\s*(?:KiB|MiB|GiB|TiB)/;
+const regexWhitespace = /\s{2,}/g;
+
+const formatSize = (size: number): string => {
+   if (size > 1099511627776) {
+      return `${(size / 1099511627776).toFixed(2)} TiB`;
+   } else if (size > 1073741824) {
+      return `${(size / 1073741824).toFixed(2)} GiB`;
+   } else if (size > 1048576) {
+      return `${(size / 1048576).toFixed(2)} MiB`;
+   } else if (size > 1024) {
+      return `${(size / 1024).toFixed(2)} KiB`;
+   }
+   return `${size} B`;
+};
+
+const getBytes = (size: string): number | null => {
+   const multiplier =
+      size.indexOf("GiB") != -1
+         ? 1073741824
+         : size.indexOf("MiB") != -1
+           ? 1048576
+           : size.indexOf("KiB") != -1
+             ? 1024
+             : size.indexOf("TiB") != -1
+               ? 1099511627776
+               : 1;
+   return Math.ceil(parseFloat(size) * multiplier);
+};
 
 const getResolution = (name: string): number | null => {
    const matched = name.match(regexResolution);
    return matched ? parseInt(matched[1], 10) : null;
+};
+
+const getSeries = (name: string): string | null => {
+   const matched = name.match(regexSeries);
+   return matched ? matched[1] : null;
+};
+
+const getSize = (name: string): string => {
+   const matched = name.match(regexSize);
+   return matched ? matched[0] : "?";
 };
 
 export async function GET(request: NextRequest) {
@@ -35,17 +74,11 @@ export async function GET(request: NextRequest) {
             controller.enqueue(new TextEncoder().encode(message));
          };
 
-         const fetchData = async () => {
+         const fetchRSS = async () => {
             try {
-               const response = await fetch(urlRSS, {
-                  headers: {
-                     "Content-Type": "application/json",
-                  },
-               });
+               const response = await fetch(urlRSS, { headers: { "Content-Type": "application/json" } });
 
-               if (!response.ok) {
-                  throw new Error(`Failed to fetch ${urlRSS}: ${response.status}`);
-               }
+               if (!response.ok) throw new Error(`Failed to fetch ${urlRSS}: ${response.status}`);
 
                const rss = await response.json();
                const feeds = Object.keys(rss);
@@ -57,10 +90,19 @@ export async function GET(request: NextRequest) {
                      const article = articles[j];
                      if (article.isRead) continue;
 
-                     const series = regexSeries.test(article.title);
-                     const resolution = getResolution(article.title);
+                     const title = article.title;
+                     const series = getSeries(title);
+                     const resolution = getResolution(title);
+                     const name = series
+                        ? title.substring(0, title.indexOf(series) + series.length)
+                        : resolution
+                          ? title.substring(0, title.lastIndexOf(resolution))
+                          : title;
+                     const size = article.contentLength ? formatSize(article.contentLength) : getSize(title);
+                     const bytes = article.contentLength ? +article.contentLength : getBytes(size);
                      const torrent: Torrent = {
                         added_on: Math.floor(new Date(article.date).getTime() / 1000),
+                        bytes: bytes,
                         category: series ? "TV" : resolution ? "Movie" : "Other",
                         dlspeed: 0,
                         eta: -1,
@@ -68,12 +110,13 @@ export async function GET(request: NextRequest) {
                         hash: article.torrentURL,
                         id: article.id,
                         is_read: article.isRead,
-                        is_series: series,
-                        name: article.title,
+                        is_series: series != null,
+                        name: name.replace(regexWhitespace, " "),
                         progress: 0,
                         ratio: 0,
                         resolution: resolution,
-                        size: parseInt(article.contentLength, 10) || 0,
+                        series: series,
+                        size: size,
                         status: "available",
                         upspeed: 0,
                      };
@@ -85,13 +128,13 @@ export async function GET(request: NextRequest) {
             } catch (error: any) {
                console.error("Error fetching torrents:", error);
                sendEvent({ type: "error", message: error.message || "Failed to fetch torrent data" });
-               // Don't close the stream on fetch error to allow for retries
+               // Don't close the stream on fetch error to allow for retries.
             }
          };
 
-         await fetchData();
+         await fetchRSS();
          // Set up polling every 7 minutes in conjunction with the 15 minute refresh cycle in qbittorrent.
-         intervalId = setInterval(fetchData, 7 * 1000 * 60); // HARD-CODED
+         intervalId = setInterval(fetchRSS, 7 * 1000 * 60); // HARD-CODED
 
          // Handle client disconnect.
          request.signal.addEventListener("abort", () => {

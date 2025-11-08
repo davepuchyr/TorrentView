@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TorrentStatusIcon } from "@/components/torrent-status-icon";
-import { formatBytes, formatEta, formatSpeed, getTrailerSearchUrl } from "@/lib/utils";
+import { formatEta, formatSpeed, getTrailerSearchUrl } from "@/lib/utils";
 import { ArrowUp, ArrowDown, ArrowUpDown, Tv, Film, Monitor, HelpCircle, Download, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -173,7 +173,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                  <TableCell>
                                     <TorrentStatusIcon status={torrent.status as TorrentStatus} />
                                  </TableCell>
-                                 <TableCell className="whitespace-nowrap text-right">{formatBytes(torrent.size)}</TableCell>
+                                 <TableCell className="whitespace-nowrap text-right">{torrent.size}</TableCell>
                                  <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-2">
                                        <Progress

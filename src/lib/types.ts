@@ -27,6 +27,7 @@ export type Feed = {
 
 export type Torrent = {
    added_on: number; // timestamp
+   bytes: number | null;
    category: string;
    dlspeed: number; // bytes/s
    eta: number; // seconds
@@ -40,7 +41,8 @@ export type Torrent = {
    progress: number; // 0-1
    ratio: number;
    resolution: number | null;
-   size: number; // in bytes
+   series: string | null;
+   size: string; // in kibibyte, mebibyte, etc
    status: TorrentStatus;
    upspeed: number; // bytes/s
 };
