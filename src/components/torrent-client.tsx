@@ -21,13 +21,14 @@ import { useToast } from "@/hooks/use-toast";
 type TorrentClientProps = {
    backendUrl: string;
    setBackendUrl: (url: string) => void;
+   torrents: Torrent[];
+   setTorrents: (torrents: Torrent[]) => void;
 };
 
 type ConnectionStatus = "connecting" | "connected" | "error";
 
-export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps) {
+export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents }: TorrentClientProps) {
    const { toast } = useToast();
-   const [torrents, setTorrents] = useState<Torrent[]>([]);
    const [filter, setFilter] = useState("");
    const [sortConfig, setSortConfig] = useState<SortConfig[]>([{ key: "added_on", direction: "descending" }]);
    const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
@@ -80,7 +81,7 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
       return () => {
          eventSource.close();
       };
-   }, [backendUrl]);
+   }, [backendUrl, setTorrents]);
 
    const handleRowClick = (hash: string) => {
       const torrent = torrents.find(t => t.hash == hash);
