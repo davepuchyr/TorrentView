@@ -20,19 +20,12 @@ export default function Home() {
          <header className="flex flex-shrink-0 items-center justify-between border-b border-border bg-card px-6 py-4 shadow-sm">
             <div className="flex items-center gap-4">
                <h1 className="font-headline text-2xl font-bold text-primary">TorrentView</h1>
-               {torrents.length > 0 && (
-                  <span className="text-sm font-medium text-muted-foreground">({torrents.length})</span>
-               )}
+               {torrents.length > 0 && <span className="text-sm font-medium text-muted-foreground">({torrents.length})</span>}
             </div>
             {backendUrl && <span className="font-mono text-sm text-muted-foreground">{backendUrl}</span>}
          </header>
          <main className="flex-1 overflow-y-auto">
-            <TorrentClient
-               backendUrl={backendUrl}
-               setBackendUrl={setBackendUrl}
-               torrents={torrents}
-               setTorrents={setTorrents}
-            />
+            <TorrentClient backendUrl={backendUrl} setBackendUrl={setBackendUrl} torrents={torrents} setTorrents={setTorrents} />
          </main>
       </div>
    );
