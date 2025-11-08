@@ -23,6 +23,8 @@ type TorrentClientProps = {
    setBackendUrl: (url: string) => void;
 };
 
+type ConnectionStatus = "connecting" | "connected" | "error";
+
 export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps) {
    const { toast } = useToast();
    const [torrents, setTorrents] = useState<Torrent[]>([]);
@@ -31,6 +33,7 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
    const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
    const [localBackendUrl, setLocalBackendUrl] = useState(backendUrl);
+   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
 
    useEffect(() => {
       setLocalBackendUrl(backendUrl);
@@ -39,38 +42,49 @@ export function TorrentClient({ backendUrl, setBackendUrl }: TorrentClientProps)
    useEffect(() => {
       if (!backendUrl) {
          setTorrents([]);
+         setConnectionStatus("connecting");
          return;
       }
 
-      const fetchTorrents = async () => {
-         try {
-            const response = await fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`);
-            if (!response.ok) {
-               throw new Error("Failed to fetch torrents");
+      const eventSource = new EventSource(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`);
+      setConnectionStatus("connecting");
+
+      const connect = () => {
+         eventSource.onmessage = event => {
+            try {
+               const data = JSON.parse(event.data);
+               if (data.type === "torrents") {
+                  setTorrents(prevTorrents => {
+                     const newTorrents: Torrent[] = data.data;
+                     const readHashes = new Set(prevTorrents.filter(t => t.is_read).map(t => t.hash));
+                     return newTorrents.map(t => ({ ...t, is_read: readHashes.has(t.hash) }));
+                  });
+                  setConnectionStatus("connected");
+               } else if (data.type === "error") {
+                  console.error("SSE Error:", data.message);
+                  setConnectionStatus("error");
+               }
+            } catch (error) {
+               console.error("Failed to parse SSE message:", error);
+               setConnectionStatus("error");
             }
-            const data: Torrent[] = await response.json();
-            // Preserve is_read status on refresh
-            setTorrents(prevTorrents => {
-               const newTorrents = [...data];
-               const readHashes = new Set(prevTorrents.filter(t => t.is_read).map(t => t.hash));
-               return newTorrents.map(t => ({ ...t, is_read: readHashes.has(t.hash) }));
-            });
-         } catch (error) {
-            console.error("Error fetching torrents:", error);
-            toast({
-               variant: "destructive",
-               title: "Fetch Error",
-               description: "Could not fetch torrent data. Please check the backend URL and your connection.",
-            });
-            setTorrents([]);
-         }
+         };
+
+         eventSource.onerror = err => {
+            console.error("EventSource failed:", err);
+            setConnectionStatus("error");
+            eventSource.close();
+            // Optional: attempt to reconnect after a delay
+            setTimeout(connect, 5000);
+         };
       };
 
-      fetchTorrents();
-      const intervalId = setInterval(fetchTorrents, 7000); // Poll every 7 seconds
+      connect();
 
-      return () => clearInterval(intervalId);
-   }, [backendUrl, toast]);
+      return () => {
+         eventSource.close();
+      };
+   }, [backendUrl]);
 
    const handleRowClick = (hash: string) => {
       const torrent = torrents.find(t => t.hash == hash);
