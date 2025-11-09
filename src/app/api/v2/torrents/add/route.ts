@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Torrent } from "@/lib/types";
+import type { Torrent, TorrentFile } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
    const { searchParams } = new URL(request.url);
@@ -12,35 +12,36 @@ export async function POST(request: NextRequest) {
    const body = await request.json();
    const torrent = body.torrent as Torrent;
    const data = body.data;
-   const fileIndices =
-      torrent.files
-         ?.map((file, index) => (data.selectedFiles.has(file.name) ? index : -1))
-         .filter(index => index !== -1)
-         .join("|") || "";
-   const formData = new FormData();
 
+   const allFileIndices = torrent.files?.map((_, i) => i) || [];
+   const selectedFileIndices = new Set<number>();
+   const unselectedFileIndices = new Set<number>();
+
+   if (torrent.files) {
+      torrent.files.forEach((file: TorrentFile, index: number) => {
+         if (data.selectedFiles.includes(file.name)) {
+            selectedFileIndices.add(index);
+         } else {
+            unselectedFileIndices.add(index);
+         }
+      });
+   }
+
+   const formData = new FormData();
    formData.append("urls", torrent.hash);
    formData.append("savepath", data.savePath);
    formData.append("paused", String(data.paused));
    formData.append("sequential", String(data.sequential));
    formData.append("firstLastPiecePrio", String(data.firstLastPiecePrio));
    formData.append("root_folder", data.contentLayout === "Original" ? "unset" : String(data.contentLayout === "Subfolder"));
-   if (fileIndices) {
-      formData.append(
-         "file_priority",
-         fileIndices
-            .split("|")
-            .map(() => "1")
-            .join("|"),
-      ); // Use '1' for normal priority
-      const allFileIndices = torrent.files!.map((_, i) => i).join("|");
-      const unselectedIndices = allFileIndices
-         .split("|")
-         .filter(i => !fileIndices.includes(i))
-         .join("|");
-      if (unselectedIndices) {
-         formData.append("file_priority", "0|" + unselectedIndices); // Use '0' to not download
-      }
+
+   if (torrent.files && selectedFileIndices.size > 0) {
+      const filePriorities = allFileIndices.map(i => (selectedFileIndices.has(i) ? "1" : "0"));
+      formData.append("file_priority", filePriorities.join("|"));
+   } else if (!torrent.files && data.selectedFiles.length === 0) {
+      // If it's a single file torrent and it's not selected, we can't download anything.
+      // Or we can treat it as "download all" if selection is empty.
+      // For now, let's assume if it's single file, it's always intended to be downloaded.
    }
 
    const url = `${backendUrl}/api/v2/torrents/add`;
@@ -52,11 +53,26 @@ export async function POST(request: NextRequest) {
          body: formData,
       });
 
-      if (fetched.status == 200) console.log(`Marked ${body.feed}.${body.id} as read.`);
+      if (fetched.ok) {
+         console.log(`Added torrent: ${torrent.name}`);
+         // Mark as read after successful addition
+         const markAsReadUrl = `${backendUrl}/api/v2/rss/markAsRead`;
+         await fetch(markAsReadUrl, {
+            headers: {
+               "accept": "*/*",
+               "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+            },
+            body: `itemPath=${encodeURIComponent(torrent.feed)}&articleId=${encodeURIComponent(torrent.id)}`,
+            method: "POST",
+         });
+         return new NextResponse("OK", { status: 200 });
+      } else {
+         const errorBody = await fetched.text();
+         console.error(`Failed to add torrent ${torrent.name}:`, errorBody);
+         return NextResponse.json({ error: `Failed to POST to ${url}: ${errorBody}` }, { status: fetched.status });
+      }
    } catch (e) {
-      console.error(`Failed to mark ${body.feed}.${body.id} as read:`, e);
+      console.error(`Failed to add torrent ${torrent.name}:`, e);
       return NextResponse.json({ error: `Failed to POST to ${url}` }, { status: 502 });
    }
-
-   return new NextResponse(fetched.body, { status: fetched.status, headers: fetched.headers });
 }

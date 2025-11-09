@@ -14,9 +14,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import type { Torrent, TorrentFile } from "@/lib/types";
-import { Separator } from "./ui/separator";
 import { formatBytes, cn } from "@/lib/utils";
 import { ScrollArea } from "./ui/scroll-area";
+import { Skeleton } from "./ui/skeleton";
 
 const formSchema = z.object({
    savePath: z.string().min(1, { message: "Save path is required." }),
@@ -158,10 +158,12 @@ const FileTree = ({
 
 export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: DownloadOptionsDialogProps) {
    const { toast } = useToast();
-   const fileTree = React.useMemo(() => (torrent?.files ? buildFileTree(torrent.files) : null), [torrent]);
+   const [files, setFiles] = React.useState<TorrentFile[] | null>(null);
+   const [isLoadingFiles, setIsLoadingFiles] = React.useState(false);
+
+   const fileTree = React.useMemo(() => (files ? buildFileTree(files) : null), [files]);
    const allFilePaths = React.useMemo(() => {
-      if (!torrent) return [];
-      if (!fileTree) return [torrent.name];
+      if (!files) return torrent ? [torrent.name] : [];
 
       const paths: string[] = [];
       const traverse = (node: FileTreeNode) => {
@@ -172,7 +174,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
       };
       if (fileTree) traverse(fileTree);
       return paths;
-   }, [fileTree, torrent]);
+   }, [fileTree, files, torrent]);
 
    const [selectedFiles, setSelectedFiles] = React.useState(new Set<string>());
 
@@ -190,9 +192,43 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
    });
 
    React.useEffect(() => {
-      if (!torrent) return; // short-circuit
+      const fetchFiles = async () => {
+         if (!torrent || !isOpen) return;
+         setIsLoadingFiles(true);
+         setFiles(null);
+         try {
+            const url = `/api/v2/torrents/files?backendUrl=${encodeURIComponent(backendUrl)}&hash=${torrent.hash}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+               throw new Error("Failed to fetch torrent contents.");
+            }
+            const data: TorrentFile[] = await response.json();
+            setFiles(data);
+         } catch (error: any) {
+            console.error("Failed to fetch torrent files:", error);
+            setFiles(null); // Explicitly set to null to indicate single file mode
+            toast({
+               variant: "destructive",
+               title: "Could not get file list",
+               description: error.message || "The backend might not support this feature.",
+            });
+         } finally {
+            setIsLoadingFiles(false);
+         }
+      };
+      fetchFiles();
+   }, [torrent, isOpen, backendUrl, toast]);
 
-      const files = new Set(allFilePaths);
+   React.useEffect(() => {
+      if (!torrent) return;
+
+      let initialSelected: Set<string>;
+      if (!files && !isLoadingFiles) {
+         initialSelected = new Set([torrent.name]);
+      } else {
+         initialSelected = new Set(allFilePaths);
+      }
+
       form.reset({
          savePath: "/home/archive/bittorrent",
          paused: false,
@@ -200,25 +236,23 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          sequential: false,
          firstLastPiecePrio: false,
          contentLayout: "NoSubfolder",
-         selectedFiles: files,
+         selectedFiles: initialSelected,
       });
-      setSelectedFiles(files);
-   }, [torrent, form, allFilePaths]);
+      setSelectedFiles(initialSelected);
+   }, [torrent, files, isLoadingFiles, allFilePaths, form]);
 
    const handleSelectionChange = (path: string, selected: boolean) => {
       const newSelectedFiles = new Set(selectedFiles);
 
       if (!fileTree) {
-         // Handle single file case
          if (selected) newSelectedFiles.add(path);
          else newSelectedFiles.delete(path);
+         form.setValue("selectedFiles", newSelectedFiles);
          setSelectedFiles(newSelectedFiles);
          return;
       }
 
       const affectedPaths = new Set<string>();
-      const isDeselectingParent = !selected && newSelectedFiles.has(path);
-
       const findNode = (node: FileTreeNode, targetPath: string): FileTreeNode | null => {
          if (node.path === targetPath) return node;
          if (node.children) {
@@ -247,7 +281,6 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          else newSelectedFiles.delete(p);
       });
 
-      // If deselecting a child, deselect parents as well
       if (!selected) {
          const parts = path.split("/");
          for (let i = parts.length - 1; i > 0; i--) {
@@ -256,30 +289,46 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          }
       }
 
-      // If selecting a child, ensure all parents are selected
       if (selected) {
          const parts = path.split("/");
          for (let i = 1; i <= parts.length; i++) {
             const parentPath = parts.slice(0, i).join("/");
-            newSelectedFiles.add(parentPath);
+            if (allFilePaths.includes(parentPath)) {
+               newSelectedFiles.add(parentPath);
+            }
          }
       }
 
+      form.setValue("selectedFiles", newSelectedFiles);
       setSelectedFiles(newSelectedFiles);
    };
 
    const onSubmit = async (data: DownloadOptionsFormValues) => {
       if (!torrent) return;
 
+      const selectedFileNames = new Set<string>();
+      if (files) {
+         const filePaths = files.map(f => f.name);
+         for (const selectedPath of data.selectedFiles) {
+            if (filePaths.includes(selectedPath)) {
+               selectedFileNames.add(selectedPath);
+            }
+         }
+      } else {
+         if (data.selectedFiles.has(torrent.name)) {
+            selectedFileNames.add(torrent.name);
+         }
+      }
       try {
-         const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`; // HARD-CODED
+         const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`;
          const response = await fetch(url, {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-               torrent,
+               torrent: { ...torrent, files: files || undefined },
                data: {
                   ...data,
-                  selectedFiles: Array.from(data.selectedFiles),
+                  selectedFiles: Array.from(selectedFileNames),
                },
             }),
          });
@@ -312,8 +361,37 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
       return null;
    }
 
-   const selectedFileCount = torrent.files ? Array.from(selectedFiles).filter(p => !p.endsWith("/")).length : selectedFiles.size;
-   const totalFileCount = torrent.files?.length || 1;
+   const selectedFileCount =
+      files && fileTree
+         ? Array.from(selectedFiles).filter(path => {
+              const node = findNode(fileTree, path);
+              return node && node.isFile;
+           }).length
+         : selectedFiles.size;
+
+   const totalFileCount = files?.length || 1;
+
+   function findNode(node: FileTreeNode, path: string): FileTreeNode | null {
+      if (node.path === path) return node;
+      if (node.children) {
+         for (const child of node.children.values()) {
+            const found = findNode(child, path);
+            if (found) return found;
+         }
+      }
+      return null;
+   }
+
+   const handleSelectAll = () => {
+      const all = new Set(allFilePaths);
+      setSelectedFiles(all);
+      form.setValue("selectedFiles", all);
+   };
+
+   const handleSelectNone = () => {
+      setSelectedFiles(new Set());
+      form.setValue("selectedFiles", new Set());
+   };
 
    return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -423,10 +501,10 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                   <div className="space-y-4">
                      <div className="flex items-center justify-between">
                         <div className="space-x-2">
-                           <Button type="button" variant="outline" onClick={() => setSelectedFiles(new Set(allFilePaths))}>
+                           <Button type="button" variant="outline" onClick={handleSelectAll}>
                               Select All
                            </Button>
-                           <Button type="button" variant="outline" onClick={() => setSelectedFiles(new Set())}>
+                           <Button type="button" variant="outline" onClick={handleSelectNone}>
                               Select None
                            </Button>
                         </div>
@@ -436,7 +514,13 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                      </div>
                      <ScrollArea className="h-[400px] rounded-md border">
                         <div className="p-1">
-                           {fileTree ? (
+                           {isLoadingFiles ? (
+                              <div className="space-y-2 p-4">
+                                 <Skeleton className="h-6 w-3/4" />
+                                 <Skeleton className="h-6 w-1/2" />
+                                 <Skeleton className="h-6 w-5/6" />
+                              </div>
+                           ) : fileTree ? (
                               <FileTree node={fileTree} selectedFiles={selectedFiles} onSelectionChange={handleSelectionChange} />
                            ) : (
                               <div className="flex items-center p-4 text-sm">
