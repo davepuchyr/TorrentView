@@ -7,7 +7,7 @@ import * as z from "zod";
 import { ChevronRight, Folder } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +25,7 @@ const formSchema = z.object({
    sequential: z.boolean().default(false),
    firstLastPiecePrio: z.boolean().default(false),
    contentLayout: z.enum(["Original", "Subfolder", "NoSubfolder"]).default("NoSubfolder"),
+   selectedFiles: z.set(z.string()),
 });
 
 type DownloadOptionsFormValues = z.infer<typeof formSchema>;
@@ -184,21 +185,24 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          sequential: false,
          firstLastPiecePrio: false,
          contentLayout: "NoSubfolder",
+         selectedFiles: new Set<string>(),
       },
    });
 
    React.useEffect(() => {
-      if (torrent) {
-         form.reset({
-            savePath: "/home/archive/bittorrent",
-            paused: false,
-            addToTop: false,
-            sequential: false,
-            firstLastPiecePrio: false,
-            contentLayout: torrent.is_series ? "Subfolder" : "NoSubfolder",
-         });
-         setSelectedFiles(new Set(allFilePaths));
-      }
+      if (!torrent) return; // short-circuit
+
+      const files = new Set(allFilePaths);
+      form.reset({
+         savePath: "/home/archive/bittorrent",
+         paused: false,
+         addToTop: false,
+         sequential: false,
+         firstLastPiecePrio: false,
+         contentLayout: "NoSubfolder",
+         selectedFiles: files,
+      });
+      setSelectedFiles(files);
    }, [torrent, form, allFilePaths]);
 
    const handleSelectionChange = (path: string, selected: boolean) => {
@@ -267,41 +271,17 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
    const onSubmit = async (data: DownloadOptionsFormValues) => {
       if (!torrent) return;
 
-      const fileIndices =
-         torrent.files
-            ?.map((file, index) => (selectedFiles.has(file.name) ? index : -1))
-            .filter(index => index !== -1)
-            .join("|") || "";
-
-      const formData = new FormData();
-      formData.append("urls", torrent.hash);
-      formData.append("savepath", data.savePath);
-      formData.append("paused", String(data.paused));
-      formData.append("sequential", String(data.sequential));
-      formData.append("firstLastPiecePrio", String(data.firstLastPiecePrio));
-      formData.append("root_folder", data.contentLayout === "Original" ? "unset" : String(data.contentLayout === "Subfolder"));
-      if (fileIndices) {
-         formData.append(
-            "file_priority",
-            fileIndices
-               .split("|")
-               .map(() => "1")
-               .join("|"),
-         ); // Use '1' for normal priority
-         const allFileIndices = torrent.files!.map((_, i) => i).join("|");
-         const unselectedIndices = allFileIndices
-            .split("|")
-            .filter(i => !fileIndices.includes(i))
-            .join("|");
-         if (unselectedIndices) {
-            formData.append("file_priority", "0|" + unselectedIndices); // Use '0' to not download
-         }
-      }
-
       try {
-         const response = await fetch(`${backendUrl}/api/v2/torrents/add`, {
+         const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`; // HARD-CODED
+         const response = await fetch(url, {
             method: "POST",
-            body: formData,
+            body: JSON.stringify({
+               torrent,
+               data: {
+                  ...data,
+                  selectedFiles: Array.from(data.selectedFiles),
+               },
+            }),
          });
 
          if (response.ok) {
@@ -340,7 +320,6 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
                <DialogTitle>Download Options for "{torrent.name}"</DialogTitle>
-               <DialogDescription>Configure settings before starting the download.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-4">
