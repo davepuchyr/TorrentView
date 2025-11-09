@@ -140,9 +140,7 @@ export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selecte
                                  }}
                                  data-state={selectedTorrent === torrent.hash ? "selected" : "unselected"}
                                  className={cn("h-9 cursor-pointer", torrent.is_read && "text-muted-foreground")}>
-                                 <TableCell
-                                    className="max-w-xs truncate p-2 font-medium md:max-w-md"
-                                    title={torrent.name}>
+                                 <TableCell className="max-w-xs truncate p-2 font-medium md:max-w-md" title={torrent.name}>
                                     {formatDisplayName(torrent)}
                                  </TableCell>
                                  <TableCell className="p-2">

@@ -102,7 +102,8 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
 
       if (torrent.is_read) return; // short-circuit
 
-      const newTorrents = torrents.map(t => (t.hash === hash ? { ...t, is_read: true } : t));
+      torrent.is_read = true;
+      const newTorrents = [...torrents];
       setTorrents(newTorrents);
 
       // Don't bother await'ing on it, just mark it as read on the backend.

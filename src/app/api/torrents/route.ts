@@ -94,13 +94,14 @@ export async function GET(request: NextRequest) {
                      const title = article.title;
                      const series = getSeries(title);
                      const resolution = getResolution(title);
-                     const name = series && resolution && regexDate.test(title)
-                        ? title.substring(0, title.indexOf(resolution))
-                        : series
-                           ? title.substring(0, title.indexOf(series) + series.length)
-                           : resolution
-                              ? title.substring(0, title.lastIndexOf(resolution))
-                              : title;
+                     const name =
+                        series && resolution && regexDate.test(title)
+                           ? title.substring(0, title.indexOf(resolution))
+                           : series
+                             ? title.substring(0, title.indexOf(series) + series.length)
+                             : resolution
+                               ? title.substring(0, title.lastIndexOf(resolution))
+                               : title;
                      const size = article.contentLength ? formatSize(article.contentLength) : getSize(title);
                      const bytes = article.contentLength ? +article.contentLength : getBytes(size);
                      const torrent: Torrent = {

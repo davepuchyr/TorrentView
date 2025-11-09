@@ -281,7 +281,13 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
       formData.append("firstLastPiecePrio", String(data.firstLastPiecePrio));
       formData.append("root_folder", data.contentLayout === "Original" ? "unset" : String(data.contentLayout === "Subfolder"));
       if (fileIndices) {
-         formData.append("file_priority", fileIndices.split("|").map(() => "1").join("|")); // Use '1' for normal priority
+         formData.append(
+            "file_priority",
+            fileIndices
+               .split("|")
+               .map(() => "1")
+               .join("|"),
+         ); // Use '1' for normal priority
          const allFileIndices = torrent.files!.map((_, i) => i).join("|");
          const unselectedIndices = allFileIndices
             .split("|")
@@ -435,7 +441,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
 
                      <h3 className="text-lg font-medium">Torrent information</h3>
                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <p>Size: {formatBytes(torrent.size || 0)} (Free space on disk: 17.50 GiB)</p>
+                        <p>Size: {torrent.size} (Free space on disk: 17.50 GiB)</p>
                         <p>Date: {new Date(torrent.added_on * 1000).toLocaleDateString()}</p>
                         <p>Comment:</p>
                      </div>
@@ -480,7 +486,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                                     {torrent.name}
                                  </label>
 
-                                 <div className="text-xs tabular-nums text-muted-foreground">{formatBytes(torrent.size || 0)}</div>
+                                 <div className="text-xs tabular-nums text-muted-foreground">{torrent.size}</div>
                               </div>
                            )}
                         </div>
