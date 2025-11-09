@@ -47,7 +47,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
          return;
       }
 
-      const eventSource = new EventSource(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`);
+      const eventSource = new EventSource(`/api/v2/rss?backendUrl=${encodeURIComponent(backendUrl)}`);
       setConnectionStatus("connecting");
 
       const connect = () => {
@@ -107,7 +107,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
       setTorrents(newTorrents);
 
       // Don't bother await'ing on it, just mark it as read on the backend.
-      fetch(`/api/torrents?backendUrl=${encodeURIComponent(backendUrl)}`, {
+      fetch(`/api/v2/rss?backendUrl=${encodeURIComponent(backendUrl)}`, {
          method: "POST",
          headers: {
             "Content-Type": "application/json",
