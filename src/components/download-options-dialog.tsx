@@ -7,7 +7,7 @@ import * as z from "zod";
 import { ChevronRight, Folder } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -321,25 +321,14 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
             <DialogHeader>
                <DialogTitle>Download Options for "{torrent.name}"</DialogTitle>
             </DialogHeader>
+            <DialogDescription>
+               Size: <span className="font-bold">{torrent.size}</span> Date:{" "}
+               <span className="font-bold">{new Date(torrent.added_on * 1000).toISOString()}</span>
+            </DialogDescription>
             <Form {...form}>
                <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-4">
                   {/* Left Column */}
                   <div className="space-y-4">
-                     <FormField
-                        control={form.control}
-                        name="savePath"
-                        render={({ field }) => (
-                           <FormItem>
-                              <FormLabel>Save at</FormLabel>
-                              <FormControl>
-                                 <Input placeholder="/path/to/downloads" {...field} />
-                              </FormControl>
-                           </FormItem>
-                        )}
-                     />
-
-                     <Separator />
-
                      <h3 className="text-lg font-medium">Torrent options</h3>
 
                      <div className="grid grid-cols-2 gap-4">
@@ -396,10 +385,23 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
 
                      <FormField
                         control={form.control}
+                        name="savePath"
+                        render={({ field }) => (
+                           <FormItem>
+                              <FormLabel>Destination directory</FormLabel>
+                              <FormControl>
+                                 <Input placeholder="/path/to/downloads" {...field} />
+                              </FormControl>
+                           </FormItem>
+                        )}
+                     />
+
+                     <FormField
+                        control={form.control}
                         name="contentLayout"
                         render={({ field }) => (
                            <FormItem>
-                              <FormLabel>Content Layout</FormLabel>
+                              <FormLabel>Content layout</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                  <FormControl>
                                     <SelectTrigger>
@@ -415,22 +417,6 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                            </FormItem>
                         )}
                      />
-
-                     <Separator />
-
-                     <h3 className="text-lg font-medium">Torrent information</h3>
-                     <div className="space-y-2 text-sm text-muted-foreground">
-                        <p>Size: {torrent.size} (Free space on disk: 17.50 GiB)</p>
-                        <p>Date: {new Date(torrent.added_on * 1000).toLocaleDateString()}</p>
-                        <p>Comment:</p>
-                     </div>
-
-                     <div className="text-sm text-muted-foreground">
-                        Metadata retrieval complete{" "}
-                        <Button type="button" variant="link" className="h-auto p-0">
-                           Save as .torrent file...
-                        </Button>
-                     </div>
                   </div>
 
                   {/* Right Column */}
