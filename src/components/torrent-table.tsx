@@ -109,7 +109,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
          <div className="w-full overflow-x-auto">
             <Table>
                <TableHeader>
-                  <TableRow className="hover:bg-card">
+                  <TableRow className="h-10 hover:bg-card">
                      {headers.map(header => (
                         <SortableHeader
                            key={header.key}
@@ -138,7 +138,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                     }
                                  }}
                                  data-state={selectedTorrent === torrent.hash ? "selected" : "unselected"}
-                                 className={cn("cursor-pointer", torrent.is_read && "text-muted-foreground")}>
+                                 className={cn("h-10 cursor-pointer", torrent.is_read && "text-muted-foreground")}>
                                  <TableCell className="max-w-xs truncate font-medium md:max-w-md" title={torrent.name}>
                                     {formatDisplayName(torrent)}
                                  </TableCell>
