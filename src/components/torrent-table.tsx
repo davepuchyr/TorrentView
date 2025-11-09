@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DownloadOptionsDialog } from "./download-options-dialog";
 
 type Props = {
+   backendUrl: string;
    torrents: Torrent[];
    sortConfig: SortConfig[];
    onSort: (key: keyof Torrent | "type", isShiftClick: boolean) => void;
@@ -47,7 +48,7 @@ const SortableHeader = ({
    const SortIcon = isSorted ? (direction === "ascending" ? ArrowUp : ArrowDown) : ArrowUpDown;
 
    return (
-      <TableHead className={cn("whitespace-nowrap", className)}>
+      <TableHead className={cn("h-8 whitespace-nowrap p-2", className)}>
          <Button variant="ghost" onClick={e => onSort(columnKey, e.shiftKey)} className="-ml-4 h-8 px-2 sm:px-4">
             {title}
             <div className="ml-2 flex items-center">
@@ -63,7 +64,7 @@ const SortableHeader = ({
    );
 };
 
-export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, onRowClick }: Props) {
+export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selectedTorrent, onRowClick }: Props) {
    const { toast } = useToast();
    const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
    const [torrentForModal, setTorrentForModal] = useState<Torrent | null>(null);
@@ -109,7 +110,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
          <div className="w-full overflow-x-auto">
             <Table>
                <TableHeader>
-                  <TableRow className="h-10 hover:bg-card">
+                  <TableRow className="h-8 hover:bg-card">
                      {headers.map(header => (
                         <SortableHeader
                            key={header.key}
@@ -138,11 +139,13 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                     }
                                  }}
                                  data-state={selectedTorrent === torrent.hash ? "selected" : "unselected"}
-                                 className={cn("h-10 cursor-pointer", torrent.is_read && "text-muted-foreground")}>
-                                 <TableCell className="max-w-xs truncate font-medium md:max-w-md" title={torrent.name}>
+                                 className={cn("h-9 cursor-pointer", torrent.is_read && "text-muted-foreground")}>
+                                 <TableCell
+                                    className="max-w-xs truncate p-2 font-medium md:max-w-md"
+                                    title={torrent.name}>
                                     {formatDisplayName(torrent)}
                                  </TableCell>
-                                 <TableCell>
+                                 <TableCell className="p-2">
                                     {torrent.category == "TV" ? (
                                        <Badge variant="outline" className="flex w-fit items-center gap-1">
                                           <HelpCircle className="h-3 w-3" />
@@ -160,7 +163,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                        </Badge>
                                     )}
                                  </TableCell>
-                                 <TableCell>
+                                 <TableCell className="p-2">
                                     {torrent.resolution ? (
                                        <Badge variant="outline" className="flex w-fit items-center gap-1">
                                           <Monitor className="h-3 w-3" />
@@ -170,15 +173,15 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                        <span className="text-muted-foreground">-</span>
                                     )}
                                  </TableCell>
-                                 <TableCell>
+                                 <TableCell className="p-2">
                                     <TorrentStatusIcon status={torrent.status as TorrentStatus} />
                                  </TableCell>
-                                 <TableCell className="whitespace-nowrap text-right">{torrent.size}</TableCell>
-                                 <TableCell className="text-right">
+                                 <TableCell className="whitespace-nowrap p-2 text-right">{torrent.size}</TableCell>
+                                 <TableCell className="p-2 text-right">
                                     <div className="flex items-center justify-end gap-2">
                                        <Progress
                                           value={torrent.progress * 100}
-                                          className="w-20 sm:w-24"
+                                          className="h-2 w-20 sm:w-24"
                                           aria-label={`Progress ${torrent.progress * 100}%`}
                                        />
                                        <span className="w-12 text-sm tabular-nums text-muted-foreground">
@@ -186,16 +189,16 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
                                        </span>
                                     </div>
                                  </TableCell>
-                                 <TableCell className="whitespace-nowrap text-right">{formatSpeed(torrent.dlspeed)}</TableCell>
-                                 <TableCell className="whitespace-nowrap text-right">{formatSpeed(torrent.upspeed)}</TableCell>
-                                 <TableCell className="text-right">{formatEta(torrent.eta)}</TableCell>
-                                 <TableCell className="text-right">{torrent.ratio?.toFixed(2)}</TableCell>
+                                 <TableCell className="whitespace-nowrap p-2 text-right">{formatSpeed(torrent.dlspeed)}</TableCell>
+                                 <TableCell className="whitespace-nowrap p-2 text-right">{formatSpeed(torrent.upspeed)}</TableCell>
+                                 <TableCell className="p-2 text-right">{formatEta(torrent.eta)}</TableCell>
+                                 <TableCell className="p-2 text-right">{torrent.ratio?.toFixed(2)}</TableCell>
                               </TableRow>
                            </ContextMenuTrigger>
                            <ContextMenuContent>
-                              <ContextMenuItem onClick={() => handleManualDownload(torrent)}>
+                              <ContextMenuItem onClick={() => handleDownload(torrent)}>
                                  <Download className="mr-2 h-4 w-4" />
-                                 <span>Download</span>
+                                 <span>Download...</span>
                               </ContextMenuItem>
                               <ContextMenuItem onClick={() => handlePreview(torrent)}>
                                  <Youtube className="mr-2 h-4 w-4" />
@@ -215,6 +218,7 @@ export function TorrentTable({ torrents, sortConfig, onSort, selectedTorrent, on
             </Table>
          </div>
          <DownloadOptionsDialog
+            backendUrl={backendUrl}
             torrent={torrentForModal}
             isOpen={isDownloadModalOpen}
             onClose={() => setIsDownloadModalOpen(false)}

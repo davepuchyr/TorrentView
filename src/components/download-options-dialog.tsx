@@ -20,16 +20,17 @@ import { ScrollArea } from "./ui/scroll-area";
 
 const formSchema = z.object({
    savePath: z.string().min(1, { message: "Save path is required." }),
-   startTorrent: z.boolean().default(true),
+   paused: z.boolean().default(false),
    addToTop: z.boolean().default(false),
-   downloadSequential: z.boolean().default(false),
-   downloadFirstLast: z.boolean().default(false),
+   sequential: z.boolean().default(false),
+   firstLastPiecePrio: z.boolean().default(false),
    contentLayout: z.enum(["Original", "Subfolder", "NoSubfolder"]).default("NoSubfolder"),
 });
 
 type DownloadOptionsFormValues = z.infer<typeof formSchema>;
 
 interface DownloadOptionsDialogProps {
+   backendUrl: string;
    torrent: Torrent | null;
    isOpen: boolean;
    onClose: () => void;
@@ -154,7 +155,7 @@ const FileTree = ({
    );
 };
 
-export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOptionsDialogProps) {
+export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: DownloadOptionsDialogProps) {
    const { toast } = useToast();
    const fileTree = React.useMemo(() => (torrent?.files ? buildFileTree(torrent.files) : null), [torrent]);
    const allFilePaths = React.useMemo(() => {
@@ -178,10 +179,10 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
       resolver: zodResolver(formSchema),
       defaultValues: {
          savePath: "/home/archive/bittorrent",
-         startTorrent: true,
+         paused: false,
          addToTop: false,
-         downloadSequential: false,
-         downloadFirstLast: false,
+         sequential: false,
+         firstLastPiecePrio: false,
          contentLayout: "NoSubfolder",
       },
    });
@@ -190,11 +191,11 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
       if (torrent) {
          form.reset({
             savePath: "/home/archive/bittorrent",
-            startTorrent: true,
+            paused: false,
             addToTop: false,
-            downloadSequential: false,
-            downloadFirstLast: false,
-            contentLayout: "NoSubfolder",
+            sequential: false,
+            firstLastPiecePrio: false,
+            contentLayout: torrent.is_series ? "Subfolder" : "NoSubfolder",
          });
          setSelectedFiles(new Set(allFilePaths));
       }
@@ -212,55 +213,121 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
       }
 
       const affectedPaths = new Set<string>();
+      const isDeselectingParent = !selected && newSelectedFiles.has(path);
 
-      const findAffected = (node: FileTreeNode) => {
-         if (node.path.startsWith(path)) {
-            affectedPaths.add(node.path);
-            if (node.children) {
-               node.children.forEach(findAffected);
+      const findNode = (node: FileTreeNode, targetPath: string): FileTreeNode | null => {
+         if (node.path === targetPath) return node;
+         if (node.children) {
+            for (const child of Array.from(node.children.values())) {
+               const found = findNode(child, targetPath);
+               if (found) return found;
             }
+         }
+         return null;
+      };
+
+      const startNode = findNode(fileTree, path);
+      if (!startNode) return;
+
+      const traverse = (node: FileTreeNode) => {
+         affectedPaths.add(node.path);
+         if (node.children) {
+            node.children.forEach(traverse);
          }
       };
 
-      if (fileTree) {
-         const findNode = (node: FileTreeNode, targetPath: string): FileTreeNode | null => {
-            if (node.path === targetPath) return node;
-            if (node.children) {
-               for (const child of Array.from(node.children.values())) {
-                  const found = findNode(child, targetPath);
-                  if (found) return found;
-               }
-            }
-            return null;
-         };
-         const startNode = findNode(fileTree, path);
-         if (startNode) {
-            findAffected(startNode);
-         }
-      }
+      traverse(startNode);
 
       affectedPaths.forEach(p => {
          if (selected) newSelectedFiles.add(p);
          else newSelectedFiles.delete(p);
       });
 
+      // If deselecting a child, deselect parents as well
+      if (!selected) {
+         const parts = path.split("/");
+         for (let i = parts.length - 1; i > 0; i--) {
+            const parentPath = parts.slice(0, i).join("/");
+            newSelectedFiles.delete(parentPath);
+         }
+      }
+
+      // If selecting a child, ensure all parents are selected
+      if (selected) {
+         const parts = path.split("/");
+         for (let i = 1; i <= parts.length; i++) {
+            const parentPath = parts.slice(0, i).join("/");
+            newSelectedFiles.add(parentPath);
+         }
+      }
+
       setSelectedFiles(newSelectedFiles);
    };
 
-   const onSubmit = (data: DownloadOptionsFormValues) => {
-      // In a real app, this would trigger a backend API call with the selected options.
-      console.log("Download options:", data);
-      console.log("Selected files:", Array.from(selectedFiles));
-      toast({
-         title: "Download Started",
-         description: `Downloading "${torrent?.name}" with custom options.`,
-      });
+   const onSubmit = async (data: DownloadOptionsFormValues) => {
+      if (!torrent) return;
+
+      const fileIndices =
+         torrent.files
+            ?.map((file, index) => (selectedFiles.has(file.name) ? index : -1))
+            .filter(index => index !== -1)
+            .join("|") || "";
+
+      const formData = new FormData();
+      formData.append("urls", torrent.hash);
+      formData.append("savepath", data.savePath);
+      formData.append("paused", String(data.paused));
+      formData.append("sequential", String(data.sequential));
+      formData.append("firstLastPiecePrio", String(data.firstLastPiecePrio));
+      formData.append("root_folder", data.contentLayout === "Original" ? "unset" : String(data.contentLayout === "Subfolder"));
+      if (fileIndices) {
+         formData.append("file_priority", fileIndices.split("|").map(() => "1").join("|")); // Use '1' for normal priority
+         const allFileIndices = torrent.files!.map((_, i) => i).join("|");
+         const unselectedIndices = allFileIndices
+            .split("|")
+            .filter(i => !fileIndices.includes(i))
+            .join("|");
+         if (unselectedIndices) {
+            formData.append("file_priority", "0|" + unselectedIndices); // Use '0' to not download
+         }
+      }
+
+      try {
+         const response = await fetch(`${backendUrl}/api/v2/torrents/add`, {
+            method: "POST",
+            body: formData,
+         });
+
+         if (response.ok) {
+            toast({
+               title: "Download Started",
+               description: `Downloading "${torrent?.name}"`,
+            });
+         } else {
+            const errorText = await response.text();
+            toast({
+               variant: "destructive",
+               title: "Failed to start download",
+               description: errorText || "An unknown error occurred.",
+            });
+         }
+      } catch (error: any) {
+         toast({
+            variant: "destructive",
+            title: "Failed to start download",
+            description: error.message || "A network error occurred.",
+         });
+      }
+
       onClose();
    };
 
    if (!torrent) {
       return null;
    }
+
+   const selectedFileCount = torrent.files ? Array.from(selectedFiles).filter(p => !p.endsWith("/")).length : selectedFiles.size;
+   const totalFileCount = torrent.files?.length || 1;
 
    return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -293,13 +360,13 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
                      <div className="grid grid-cols-2 gap-4">
                         <FormField
                            control={form.control}
-                           name="startTorrent"
+                           name="paused"
                            render={({ field }) => (
                               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                                  <FormControl>
                                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                                  </FormControl>
-                                 <FormLabel className="font-normal">Start torrent</FormLabel>
+                                 <FormLabel className="font-normal">Start torrent paused</FormLabel>
                               </FormItem>
                            )}
                         />
@@ -318,7 +385,7 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
                         />
                         <FormField
                            control={form.control}
-                           name="downloadSequential"
+                           name="sequential"
                            render={({ field }) => (
                               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                                  <FormControl>
@@ -330,7 +397,7 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
                         />
                         <FormField
                            control={form.control}
-                           name="downloadFirstLast"
+                           name="firstLastPiecePrio"
                            render={({ field }) => (
                               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                                  <FormControl>
@@ -368,8 +435,8 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
 
                      <h3 className="text-lg font-medium">Torrent information</h3>
                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <p>Size: {formatBytes(torrent.size)} (Free space on disk: 17.50 GiB)</p>
-                        <p>Date: Not available</p>
+                        <p>Size: {formatBytes(torrent.size || 0)} (Free space on disk: 17.50 GiB)</p>
+                        <p>Date: {new Date(torrent.added_on * 1000).toLocaleDateString()}</p>
                         <p>Comment:</p>
                      </div>
 
@@ -392,6 +459,9 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
                               Select None
                            </Button>
                         </div>
+                        <div className="text-sm text-muted-foreground">
+                           {selectedFileCount} / {totalFileCount} files selected
+                        </div>
                      </div>
                      <ScrollArea className="h-[400px] rounded-md border">
                         <div className="p-1">
@@ -400,17 +470,17 @@ export function DownloadOptionsDialog({ torrent, isOpen, onClose }: DownloadOpti
                            ) : (
                               <div className="flex items-center p-4 text-sm">
                                  <Checkbox
-                                    id="file"
+                                    id={`file-${torrent.name}`}
                                     checked={selectedFiles.has(torrent.name)}
                                     onCheckedChange={checked => handleSelectionChange(torrent.name, !!checked)}
                                     className="mr-2"
                                  />
-                                 <div>
-                                    <label htmlFor="file" className="ml-2">
-                                       {torrent.name}
-                                    </label>
-                                    <div className="pl-2 text-muted-foreground">{formatBytes(torrent.size)}</div>
-                                 </div>
+
+                                 <label htmlFor={`file-${torrent.name}`} className="flex-grow">
+                                    {torrent.name}
+                                 </label>
+
+                                 <div className="text-xs tabular-nums text-muted-foreground">{formatBytes(torrent.size || 0)}</div>
                               </div>
                            )}
                         </div>

@@ -60,6 +60,13 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
                } else if (data.type === "error") {
                   console.error("SSE Error:", data.message);
                   setConnectionStatus("error");
+                  toast({
+                     variant: "destructive",
+                     title: "Connection Error",
+                     description: data.message,
+                  });
+               } else if (data.type === "status") {
+                  // You can handle status messages here if needed
                }
             } catch (error) {
                console.error("Failed to parse SSE message:", error);
@@ -70,9 +77,14 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
          eventSource.onerror = err => {
             console.error("EventSource failed:", err);
             setConnectionStatus("error");
+            toast({
+               variant: "destructive",
+               title: "Connection Failed",
+               description: "Could not connect to the backend. Please check the URL and your connection.",
+            });
             eventSource.close();
             // Optional: attempt to reconnect after a delay
-            setTimeout(connect, 5000);
+            // setTimeout(connect, 5000);
          };
       };
 
@@ -81,7 +93,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
       return () => {
          eventSource.close();
       };
-   }, [backendUrl, setTorrents]);
+   }, [backendUrl, setTorrents, toast]);
 
    const handleRowClick = (hash: string) => {
       setSelectedTorrent(hash);
@@ -90,8 +102,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
 
       if (torrent.is_read) return; // short-circuit
 
-      torrent.is_read = true;
-      const newTorrents = [...torrents];
+      const newTorrents = torrents.map(t => (t.hash === hash ? { ...t, is_read: true } : t));
       setTorrents(newTorrents);
 
       // Don't bother await'ing on it, just mark it as read on the backend.
@@ -266,6 +277,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
          </div>
          <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
             <TorrentTable
+               backendUrl={backendUrl}
                torrents={filteredAndSortedTorrents}
                sortConfig={sortConfig}
                onSort={handleSort}
