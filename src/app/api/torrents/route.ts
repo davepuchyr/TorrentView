@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Torrent } from "@/lib/types";
 
+const regexDate = /\d{4}(?:[-./\s]?\d{2}){2}/;
 const regexResolution = /(\d{3,4})p/i;
-const regexSeries = /(S\d{1,2}(E\d{1,2})?)(.*complete)?/i;
+const regexSeries = /(S\d{1,2}(E\d{1,2})?|\d{4}(?:[-./\s]?\d{2}){2})(.*complete)?/i;
 const regexSize = /\b\d+(?:\.\d+)?\s*(?:KiB|MiB|GiB|TiB)/;
 const regexWhitespace = /\s{2,}/g;
 
@@ -93,11 +94,13 @@ export async function GET(request: NextRequest) {
                      const title = article.title;
                      const series = getSeries(title);
                      const resolution = getResolution(title);
-                     const name = series
-                        ? title.substring(0, title.indexOf(series) + series.length)
-                        : resolution
-                          ? title.substring(0, title.lastIndexOf(resolution))
-                          : title;
+                     const name = series && resolution && regexDate.test(title)
+                        ? title.substring(0, title.indexOf(resolution))
+                        : series
+                           ? title.substring(0, title.indexOf(series) + series.length)
+                           : resolution
+                              ? title.substring(0, title.lastIndexOf(resolution))
+                              : title;
                      const size = article.contentLength ? formatSize(article.contentLength) : getSize(title);
                      const bytes = article.contentLength ? +article.contentLength : getBytes(size);
                      const torrent: Torrent = {
