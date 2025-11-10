@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { ChevronRight, Folder } from "lucide-react";
 
@@ -36,6 +36,16 @@ interface DownloadOptionsDialogProps {
    isOpen: boolean;
    onClose: () => void;
 }
+
+const downloadDefaults: DownloadOptionsFormValues = {
+   savePath: "/home/archive/bittorrent",
+   paused: true,
+   addToTop: false,
+   sequential: false,
+   firstLastPiecePrio: false,
+   contentLayout: "NoSubfolder",
+   selectedFiles: new Set<string>(),
+};
 
 type FileTreeNode = {
    name: string;
@@ -160,6 +170,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
    const { toast } = useToast();
    const [files, setFiles] = React.useState<TorrentFile[] | null>(null);
    const [isLoadingFiles, setIsLoadingFiles] = React.useState(false);
+   const [selectedFiles, setSelectedFiles] = React.useState(new Set<string>());
 
    const fileTree = React.useMemo(() => (files ? buildFileTree(files) : null), [files]);
    const allFilePaths = React.useMemo(() => {
@@ -176,22 +187,56 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
       return paths;
    }, [fileTree, files, torrent]);
 
-   const [selectedFiles, setSelectedFiles] = React.useState(new Set<string>());
-
    const form = useForm<DownloadOptionsFormValues>({
       resolver: zodResolver(formSchema),
-      defaultValues: {
-         savePath: "/home/archive/bittorrent",
-         paused: false,
-         addToTop: false,
-         sequential: false,
-         firstLastPiecePrio: false,
-         contentLayout: "NoSubfolder",
-         selectedFiles: new Set<string>(),
-      },
+      defaultValues: downloadDefaults,
    });
 
    React.useEffect(() => {
+      if (!torrent) return;
+
+      const addTorrent = async () => {
+         try {
+            const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`;
+            const response = await fetch(url, {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({
+                  torrent,
+                  data: downloadDefaults,
+               }),
+            });
+
+            if (response.ok) {
+               toast({
+                  title: "Torrent staged for download",
+                  description: `Staged "${torrent.name}" and fetched its metadata.`,
+               });
+               // TODO: setFiles()
+               const added = await response.json();
+               console.log(added);
+            } else {
+               const o = await response.json();
+               toast({
+                  variant: "destructive",
+                  title: "Failed to start download",
+                  description: o.error || "An unknown error occurred.",
+               });
+            }
+         } catch (error: any) {
+            toast({
+               variant: "destructive",
+               title: "Failed to start download",
+               description: error.message || "A network error occurred.",
+            });
+         }
+      };
+
+      addTorrent();
+   }, [backendUrl, torrent]);
+
+   React.useEffect(() => {
+      if (torrent || !isOpen) return; // dmjp!
       const fetchFiles = async () => {
          if (!torrent || !isOpen) return;
          setIsLoadingFiles(true);
@@ -320,10 +365,8 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          }
       }
       try {
-         const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`;
+         const url = `/api/v2/torrents/resume?backendUrl=${encodeURIComponent(backendUrl)}`;
          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                torrent: { ...torrent, files: files || undefined },
                data: {
@@ -331,11 +374,13 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                   selectedFiles: Array.from(selectedFileNames),
                },
             }),
+            headers: { "Content-Type": "application/json" },
+            method: "POST",
          });
 
          if (response.ok) {
             toast({
-               title: "Download Started",
+               title: "Download started",
                description: `Downloading "${torrent?.name}"`,
             });
          } else {
@@ -357,9 +402,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
       onClose();
    };
 
-   if (!torrent) {
-      return null;
-   }
+   if (!torrent) return null; // short-circuit
 
    const selectedFileCount =
       files && fileTree
