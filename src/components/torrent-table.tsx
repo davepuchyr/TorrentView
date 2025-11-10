@@ -65,7 +65,6 @@ const SortableHeader = ({
 };
 
 export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selectedTorrent, onRowClick }: Props) {
-   const { toast } = useToast();
    const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
    const [torrentForModal, setTorrentForModal] = useState<Torrent | null>(null);
 
@@ -73,8 +72,8 @@ export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selecte
       { key: "name", label: "Name", className: "w-[40%]" },
       { key: "type", label: "Type" },
       { key: "resolution", label: "Resolution" },
-      { key: "status", label: "Status" },
       { key: "size", label: "Size", headerClassName: "text-right", className: "text-right" },
+      { key: "status", label: "Status" },
       { key: "progress", label: "Progress", headerClassName: "text-right", className: "text-right" },
       { key: "dlspeed", label: "Down Speed", headerClassName: "text-right", className: "text-right" },
       { key: "upspeed", label: "Up Speed", headerClassName: "text-right", className: "text-right" },
@@ -87,22 +86,8 @@ export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selecte
       setIsDownloadModalOpen(true);
    };
 
-   const handleManualDownload = (torrent: Torrent) => {
-      toast({
-         title: "Download Started",
-         description: `Downloading "${torrent.name}".`,
-      });
-   };
-
    const handlePreview = (torrent: Torrent) => {
       window.open(getTrailerSearchUrl(torrent.name), "_blank");
-   };
-
-   const formatDisplayName = (torrent: Torrent) => {
-      if (torrent.resolution && torrent.resolution < 1080) {
-         return torrent.name.replace(`${torrent.resolution}p`, `0${torrent.resolution}p`);
-      }
-      return torrent.name;
    };
 
    return (
@@ -141,7 +126,7 @@ export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selecte
                                  data-state={selectedTorrent === torrent.hash ? "selected" : "unselected"}
                                  className={cn("h-9 cursor-pointer", torrent.is_read && "text-muted-foreground")}>
                                  <TableCell className="max-w-xs truncate p-2 font-medium md:max-w-md" title={torrent.name}>
-                                    {formatDisplayName(torrent)}
+                                    {torrent.name}
                                  </TableCell>
                                  <TableCell className="p-2">
                                     {torrent.category == "TV" ? (
@@ -171,10 +156,10 @@ export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selecte
                                        <span className="text-muted-foreground">-</span>
                                     )}
                                  </TableCell>
+                                 <TableCell className="whitespace-nowrap p-2 text-right">{torrent.size}</TableCell>
                                  <TableCell className="p-2">
                                     <TorrentStatusIcon status={torrent.status as TorrentStatus} />
                                  </TableCell>
-                                 <TableCell className="whitespace-nowrap p-2 text-right">{torrent.size}</TableCell>
                                  <TableCell className="p-2 text-right">
                                     <div className="flex items-center justify-end gap-2">
                                        <Progress

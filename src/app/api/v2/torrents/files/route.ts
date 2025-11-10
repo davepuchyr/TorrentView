@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
    try {
       fetched = await fetch(url, {
          headers: {
-            "accept": "*/*",
+            accept: "*/*",
          },
       });
       const data = await fetched.json();
