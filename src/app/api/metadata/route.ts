@@ -176,6 +176,12 @@ const getTorrentMetadata = async (url: string): Promise<TorrentMetadata> => {
    }
 };
 
+
+/**
+ * This is a custom endpoint, not a qbittorrent proxy endpoint, that is necessary since qbittorrent doesn't provide an endpoint for querying a torrent's metadata.
+ * @param request
+ * @returns torrent metadata
+ */
 export async function GET(request: NextRequest) {
    const { searchParams } = new URL(request.url);
    const backendUrl = searchParams.get("backendUrl");

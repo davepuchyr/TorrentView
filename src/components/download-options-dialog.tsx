@@ -197,7 +197,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          setIsLoadingFiles(true);
          setFiles(null);
          try {
-            const url = `/api/v2/torrents/files?backendUrl=${encodeURIComponent(backendUrl)}&url=${encodeURIComponent(torrent.hash)}`;
+            const url = `/api/metadata?backendUrl=${encodeURIComponent(backendUrl)}&url=${encodeURIComponent(torrent.hash)}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Failed to fetch torrent contents for url ${torrent.hash}.`);
 
@@ -319,7 +319,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          }
       }
       try {
-         const url = `/api/v2/torrents/resume?backendUrl=${encodeURIComponent(backendUrl)}`;
+         const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`;
          const response = await fetch(url, {
             body: JSON.stringify({
                torrent: { ...torrent, files: files || undefined },

@@ -5,9 +5,7 @@ export async function POST(request: NextRequest) {
    const { searchParams } = new URL(request.url);
    const backendUrl = searchParams.get("backendUrl");
 
-   if (!backendUrl) {
-      return NextResponse.json({ error: "Missing backendUrl parameter" }, { status: 400 });
-   }
+   if (!backendUrl) return NextResponse.json({ error: "Missing backendUrl parameter" }, { status: 400 });
 
    const body = await request.json();
    const torrent = body.torrent as Torrent;
@@ -16,7 +14,7 @@ export async function POST(request: NextRequest) {
 
    formData.append("urls", torrent.hash);
    formData.append("savepath", data.savePath);
-   formData.append("paused", String(true)); // HARD-CODED: always start paused since we need the torrent files that can only be obtained with the calculated hash
+   formData.append("paused", String(data.paused));
    formData.append("sequential", String(data.sequential));
    formData.append("firstLastPiecePrio", String(data.firstLastPiecePrio));
    formData.append("root_folder", data.contentLayout === "Original" ? "unset" : String(data.contentLayout === "Subfolder"));
