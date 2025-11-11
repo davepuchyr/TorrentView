@@ -14,33 +14,23 @@ export async function POST(request: NextRequest) {
 
    formData.append("urls", torrent.hash);
    formData.append("savepath", data.savePath);
-   formData.append("paused", String(data.paused));
+   formData.append("paused", String(data.paused)); // NOTE: Ignored by the backend as of 2025.11.11 for some reason.
    formData.append("sequential", String(data.sequential));
    formData.append("firstLastPiecePrio", String(data.firstLastPiecePrio));
    formData.append("root_folder", data.contentLayout === "Original" ? "unset" : String(data.contentLayout === "Subfolder"));
 
    let url = `${backendUrl}/api/v2/torrents/add`;
-   let fetched: Response;
-   const failed = async (response: Response) => {
-      const errorBody = await response.text();
-      console.error(`Failed to add torrent ${torrent.name}:`, errorBody);
-      return NextResponse.json({ error: `Failed to POST to ${url}: ${errorBody}` }, { status: response.status });
-   };
-
    try {
-      // Add the torrent...
-      fetched = await fetch(url, {
+      const fetched = await fetch(url, {
          body: formData,
          method: "POST",
       });
 
-      if (!fetched.ok) return await failed(fetched);
-
-      // ...and get its hash.
-      url = `${backendUrl}/api/v2/torrents/info?limit=1&sort=added_on&reverse=true`;
-      fetched = await fetch(url);
-
-      if (!fetched.ok) return await failed(fetched);
+      if (!fetched.ok) {
+         const errorBody = await fetched.text();
+         console.error(`Failed to add torrent ${torrent.name}:`, errorBody);
+         return NextResponse.json({ error: `Failed to POST to ${url}: ${errorBody}` }, { status: fetched.status });
+      }
 
       return new NextResponse(fetched.body, { status: 200 });
    } catch (e) {
