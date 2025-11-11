@@ -37,6 +37,7 @@ export type Torrent = {
    id: string;
    is_read: boolean;
    is_series: boolean;
+   metadata: TorrentMetadata | null;
    name: string;
    progress: number; // 0-1
    ratio: number;
@@ -66,19 +67,19 @@ export type TorrentFileInfo = {
 };
 
 export type TorrentMetadata = {
-   source: "magnet" | "torrent";
-   hash: string | null;
-   v1Hash: string | null;
-   v2Hash: string | null;
-   name: string | null;
-   length: number | null;
-   files: TorrentFileInfo[];
-   fileTree: Record<string, any>;
-   private: boolean | null;
+   announce: string[] | null;
+   comment: string | null;
    createdBy: string | null;
    creationDate: string | null;
-   comment: string | null;
-   announce: string[] | null;
+   files: TorrentFileInfo[];
+   fileTree: Record<string, any>;
+   hash: string | null;
+   length: number | null;
+   name: string | null;
    pieceLength?: number;
    pieces?: number;
+   private: boolean | null;
+   source: "magnet" | "torrent";
+   v1Hash: string | null;
+   v2Hash: string | null;
 };

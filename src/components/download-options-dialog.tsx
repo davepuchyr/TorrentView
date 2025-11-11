@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import type { Torrent, TorrentFile, TorrentFileInfo } from "@/lib/types";
+import type { Torrent, TorrentFile, TorrentFileInfo, TorrentMetadata } from "@/lib/types";
 import { formatBytes, cn } from "@/lib/utils";
 import { ScrollArea } from "./ui/scroll-area";
 import { Skeleton } from "./ui/skeleton";
@@ -193,7 +193,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
 
    React.useEffect(() => {
       const fetchFiles = async () => {
-         if (!torrent || !isOpen) return;
+         if (!torrent || !isOpen || torrent.metadata?.files) return;
          setIsLoadingFiles(true);
          setFiles(null);
          try {
@@ -201,8 +201,9 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Failed to fetch torrent contents for url ${torrent.hash}.`);
 
-            const data: TorrentFileInfo[] = await response.json();
-            setFiles(data);
+            const metadata: TorrentMetadata = await response.json();
+            torrent.metadata = metadata; // NOTE: Quietly add metadata to torrent, ie don't trigger a re-render.
+            setFiles(metadata.files);
          } catch (error: any) {
             console.error("Failed to fetch torrent files:", error);
             setFiles(null); // Explicitly set to null to indicate single file mode
@@ -322,7 +323,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
          const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`;
          const response = await fetch(url, {
             body: JSON.stringify({
-               torrent: { ...torrent, files: files || undefined },
+               torrent,
                data: {
                   ...data,
                   selectedFiles: Array.from(selectedFileNames),

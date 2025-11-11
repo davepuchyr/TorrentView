@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
 
    try {
       const metadata = await getTorrentMetadata(url);
-      return NextResponse.json(metadata.files, { status: 200 });
+      return NextResponse.json(metadata, { status: 200 });
    } catch (e) {
       const message = `Failed to get metadata for ${url}`;
       console.error(`${message}:`, e);
