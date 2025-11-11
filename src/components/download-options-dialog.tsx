@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import type { Torrent, TorrentFile } from "@/lib/types";
+import type { Torrent, TorrentFile, TorrentFileInfo } from "@/lib/types";
 import { formatBytes, cn } from "@/lib/utils";
 import { ScrollArea } from "./ui/scroll-area";
 import { Skeleton } from "./ui/skeleton";
@@ -55,12 +55,12 @@ type FileTreeNode = {
    isFile: boolean;
 };
 
-const buildFileTree = (files: TorrentFile[]): FileTreeNode => {
+const buildFileTree = (files: TorrentFileInfo[]): FileTreeNode => {
    const root: FileTreeNode = { name: "/", path: "/", size: 0, children: new Map(), isFile: false };
 
    files.forEach(file => {
       let currentNode = root;
-      const parts = file.name.split("/");
+      const parts = file.path;
       parts.forEach((part, index) => {
          if (!currentNode.children) {
             currentNode.children = new Map();
@@ -73,7 +73,7 @@ const buildFileTree = (files: TorrentFile[]): FileTreeNode => {
 
          const childNode = currentNode.children.get(part)!;
          if (index === parts.length - 1) {
-            childNode.size = file.size;
+            childNode.size = file.length;
          }
          currentNode = childNode;
       });
@@ -168,10 +168,9 @@ const FileTree = ({
 
 export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: DownloadOptionsDialogProps) {
    const { toast } = useToast();
-   const [files, setFiles] = React.useState<TorrentFile[] | null>(null);
+   const [files, setFiles] = React.useState<TorrentFileInfo[] | null>(null);
    const [isLoadingFiles, setIsLoadingFiles] = React.useState(false);
    const [selectedFiles, setSelectedFiles] = React.useState(new Set<string>());
-
    const fileTree = React.useMemo(() => (files ? buildFileTree(files) : null), [files]);
    const allFilePaths = React.useMemo(() => {
       if (!files) return torrent ? [torrent.name] : [];
@@ -193,61 +192,16 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
    });
 
    React.useEffect(() => {
-      if (!torrent) return;
-
-      const addTorrent = async () => {
-         try {
-            const url = `/api/v2/torrents/add?backendUrl=${encodeURIComponent(backendUrl)}`;
-            const response = await fetch(url, {
-               method: "POST",
-               headers: { "Content-Type": "application/json" },
-               body: JSON.stringify({
-                  torrent,
-                  data: downloadDefaults,
-               }),
-            });
-
-            if (response.ok) {
-               toast({
-                  title: "Torrent staged for download",
-                  description: `Staged "${torrent.name}" and fetched its metadata.`,
-               });
-               // TODO: setFiles()
-               const added = await response.json();
-               console.log(added);
-            } else {
-               const o = await response.json();
-               toast({
-                  variant: "destructive",
-                  title: "Failed to start download",
-                  description: o.error || "An unknown error occurred.",
-               });
-            }
-         } catch (error: any) {
-            toast({
-               variant: "destructive",
-               title: "Failed to start download",
-               description: error.message || "A network error occurred.",
-            });
-         }
-      };
-
-      addTorrent();
-   }, [backendUrl, torrent]);
-
-   React.useEffect(() => {
-      if (torrent || !isOpen) return; // dmjp!
       const fetchFiles = async () => {
          if (!torrent || !isOpen) return;
          setIsLoadingFiles(true);
          setFiles(null);
          try {
-            const url = `/api/v2/torrents/files?backendUrl=${encodeURIComponent(backendUrl)}&hash=${torrent.hash}`;
+            const url = `/api/v2/torrents/files?backendUrl=${encodeURIComponent(backendUrl)}&url=${encodeURIComponent(torrent.hash)}`;
             const response = await fetch(url);
-            if (!response.ok) {
-               throw new Error("Failed to fetch torrent contents.");
-            }
-            const data: TorrentFile[] = await response.json();
+            if (!response.ok) throw new Error(`Failed to fetch torrent contents for url ${torrent.hash}.`);
+
+            const data: TorrentFileInfo[] = await response.json();
             setFiles(data);
          } catch (error: any) {
             console.error("Failed to fetch torrent files:", error);
@@ -353,7 +307,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
 
       const selectedFileNames = new Set<string>();
       if (files) {
-         const filePaths = files.map(f => f.name);
+         const filePaths = files.map(f => f.path.join("/"));
          for (const selectedPath of data.selectedFiles) {
             if (filePaths.includes(selectedPath)) {
                selectedFileNames.add(selectedPath);

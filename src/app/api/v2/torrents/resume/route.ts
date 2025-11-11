@@ -9,5 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing backendUrl parameter" }, { status: 400 });
    }
 
-   throw new Error( "This was a work-in-progress that lead to nowhere since autodownloading of RSS torrents has to be disabled in order to prevent a full download of the torrent, which sucks for all the torrents that are automagically downloaded with RSS rules." );
+   throw new Error(
+      "This was a work-in-progress that lead to nowhere since autodownloading of RSS torrents has to be disabled in order to prevent a full download of the torrent, which sucks for all the torrents that are automagically downloaded with RSS rules.",
+   );
 }

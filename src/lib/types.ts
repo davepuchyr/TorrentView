@@ -59,3 +59,27 @@ export type SortConfig = {
    key: keyof Torrent | "type";
    direction: "ascending" | "descending";
 };
+
+export type TorrentFileInfo = {
+   path: string[];
+   length: number;
+};
+
+export type TorrentMetadata = {
+   source: "magnet" | "torrent";
+   hash: string | null;
+   v1Hash: string | null;
+   v2Hash: string | null;
+   name: string | null;
+   length: number | null;
+   files: TorrentFileInfo[];
+   fileTree: Record<string, any>;
+   private: boolean | null;
+   createdBy: string | null;
+   creationDate: string | null;
+   comment: string | null;
+   announce: string | null;
+   announceList: string[][];
+   pieceLength?: number;
+   pieces?: number;
+};
