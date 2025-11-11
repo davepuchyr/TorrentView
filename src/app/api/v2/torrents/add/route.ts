@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
 
    formData.append("urls", torrent.hash);
    formData.append("savepath", data.savePath);
-   formData.append("paused", String(data.paused)); // NOTE: Ignored by the backend as of 2025.11.11 for some reason.
-   formData.append("sequential", String(data.sequential));
+   formData.append("stopped", String(true)); // NOTE: Always start stopped so that files can be cherry-picked.
+   formData.append("sequentialDownload", String(data.sequential));
    formData.append("firstLastPiecePrio", String(data.firstLastPiecePrio));
-   formData.append("root_folder", data.contentLayout === "Original" ? "unset" : String(data.contentLayout === "Subfolder"));
+   formData.append("contentLayout", data.contentLayout);
 
    let url = `${backendUrl}/api/v2/torrents/add`;
    try {
