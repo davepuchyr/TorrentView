@@ -78,8 +78,7 @@ export type TorrentMetadata = {
    createdBy: string | null;
    creationDate: string | null;
    comment: string | null;
-   announce: string | null;
-   announceList: string[][];
+   announce: string[] | null;
    pieceLength?: number;
    pieces?: number;
 };
