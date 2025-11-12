@@ -402,9 +402,9 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                <span className="font-bold">{new Date(torrent.added_on * 1000).toISOString()}</span>
             </DialogDescription>
             <Form {...form}>
-               <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-4">
+               <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-3 gap-x-8 gap-y-4">
                   {/* Left Column */}
-                  <div className="space-y-4">
+                  <div className="col-span-1 space-y-4">
                      <h3 className="text-lg font-medium">Torrent options</h3>
 
                      <div className="grid grid-cols-2 gap-4">
@@ -496,7 +496,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                   </div>
 
                   {/* Right Column */}
-                  <div className="space-y-4">
+                  <div className="col-span-2 space-y-4">
                      <div className="flex items-center justify-between">
                         <div className="space-x-2">
                            <Button type="button" variant="outline" onClick={handleSelectAll}>
@@ -511,36 +511,38 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                         </div>
                      </div>
                      <ScrollArea className="h-[400px] rounded-md border">
-                        <div className="p-1">
-                           {isLoadingFiles ? (
-                              <div className="space-y-2 p-4">
-                                 <Skeleton className="h-6 w-3/4" />
-                                 <Skeleton className="h-6 w-1/2" />
-                                 <Skeleton className="h-6 w-5/6" />
-                              </div>
-                           ) : fileTree ? (
-                              <FileTree node={fileTree} selectedFiles={selectedFiles} onSelectionChange={handleSelectionChange} />
-                           ) : (
-                              <div className="flex items-center p-4 text-sm">
-                                 <Checkbox
-                                    id={`file-${torrent.name}`}
-                                    checked={selectedFiles.has(torrent.name)}
-                                    onCheckedChange={checked => handleSelectionChange(torrent.name, !!checked)}
-                                    className="mr-2"
-                                 />
+                        <div className="w-full overflow-x-auto p-1">
+                           <div className="min-w-max">
+                              {isLoadingFiles ? (
+                                 <div className="space-y-2 p-4">
+                                    <Skeleton className="h-6 w-3/4" />
+                                    <Skeleton className="h-6 w-1/2" />
+                                    <Skeleton className="h-6 w-5/6" />
+                                 </div>
+                              ) : fileTree ? (
+                                 <FileTree node={fileTree} selectedFiles={selectedFiles} onSelectionChange={handleSelectionChange} />
+                              ) : (
+                                 <div className="flex items-center p-4 text-sm">
+                                    <Checkbox
+                                       id={`file-${torrent.name}`}
+                                       checked={selectedFiles.has(torrent.name)}
+                                       onCheckedChange={checked => handleSelectionChange(torrent.name, !!checked)}
+                                       className="mr-2"
+                                    />
 
-                                 <label htmlFor={`file-${torrent.name}`} className="flex-grow">
-                                    {torrent.name}
-                                 </label>
+                                    <label htmlFor={`file-${torrent.name}`} className="flex-grow">
+                                       {torrent.name}
+                                    </label>
 
-                                 <div className="text-xs tabular-nums text-muted-foreground">{torrent.size}</div>
-                              </div>
-                           )}
+                                    <div className="text-xs tabular-nums text-muted-foreground">{torrent.size}</div>
+                                 </div>
+                              )}
+                           </div>
                         </div>
                      </ScrollArea>
                   </div>
 
-                  <DialogFooter className="col-span-2">
+                  <DialogFooter className="col-span-3">
                      <Button type="button" variant="ghost" onClick={onClose}>
                         Cancel
                      </Button>
@@ -552,3 +554,5 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
       </Dialog>
    );
 }
+
+    
