@@ -115,6 +115,7 @@ export async function GET(request: NextRequest) {
                         id: article.id,
                         is_read: article.isRead,
                         is_series: series != null,
+                        metadata: null,
                         name: name.replace(regexWhitespace, " "),
                         progress: 0,
                         ratio: 0,
@@ -164,30 +165,23 @@ export async function POST(request: NextRequest) {
    const { searchParams } = new URL(request.url);
    const backendUrl = searchParams.get("backendUrl");
 
-   if (!backendUrl) {
-      return NextResponse.json({ error: "Missing backendUrl parameter" }, { status: 400 });
-   }
+   if (!backendUrl) return NextResponse.json({ error: "Missing backendUrl parameter" }, { status: 400 });
 
    const body = await request.json();
    const feed = encodeURIComponent(body.feed);
    const id = encodeURIComponent(body.id);
    const url = `${backendUrl}/api/v2/rss/markAsRead`;
-   let fetched: Response;
 
    try {
-      fetched = await fetch(url, {
-         headers: {
-            "accept": "*/*",
-            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-         },
-         body: `itemPath=${feed}&articleId=${id}`,
-         method: "POST",
-      });
-      if (fetched.status == 200) console.log(`Marked ${body.feed}.${body.id} as read.`);
+      const formData = new FormData();
+      formData.append("itemPath", feed);
+      formData.append("articleId", id);
+      const fetched = await fetch(url, { body: formData, method: "POST", });
+      if ( !fetched.ok ) throw new Error( "");
    } catch (e) {
       console.error(`Failed to mark ${body.feed}.${body.id} as read:`, e);
-      return NextResponse.json({ error: `Failed to POST to ${url}` }, { status: 502 });
+      return NextResponse.json({ error: `Failed to POST ${body.feed}.${body.id} to ${url}` }, { status: 500 });
    }
 
-   return new NextResponse(fetched.body, { status: fetched.status, headers: fetched.headers });
+   return new NextResponse(); // empty, but successful, response on success
 }
