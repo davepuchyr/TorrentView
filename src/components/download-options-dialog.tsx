@@ -393,7 +393,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
 
    return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-         <DialogContent className="sm:max-w-[800px]">
+         <DialogContent className="max-w-[90vw]">
             <DialogHeader>
                <DialogTitle>Download Options for "{torrent.name}"</DialogTitle>
             </DialogHeader>
