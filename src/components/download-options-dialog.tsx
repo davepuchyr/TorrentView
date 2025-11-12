@@ -134,7 +134,7 @@ const FileTree = ({
    return (
       <div>
          <div className={cn("flex items-center rounded-md p-1 text-sm hover:bg-accent", { "bg-accent/50": isSelected })}>
-            <div style={{ paddingLeft: `${level * 1.5}rem` }} className="flex flex-grow items-center overflow-hidden">
+            <div style={{ paddingLeft: `${level * 1.5}rem` }} className="flex min-w-0 flex-grow items-center">
                <Checkbox id={`file-${node.path}`} checked={isSelected} onCheckedChange={handleCheckedChange} className="mr-2" />
                {isDirectory && (
                   <ChevronRight
