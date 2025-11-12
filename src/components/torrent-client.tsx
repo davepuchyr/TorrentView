@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -32,6 +33,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
    const [filter, setFilter] = useState("");
    const [sortConfig, setSortConfig] = useState<SortConfig[]>([{ key: "added_on", direction: "descending" }]);
    const [selectedTorrent, setSelectedTorrent] = useState<string | null>(null);
+   const [readTorrents, setReadTorrents] = useState(new Set<string>());
    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
    const [localBackendUrl, setLocalBackendUrl] = useState(backendUrl);
    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
@@ -99,12 +101,11 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
       setSelectedTorrent(hash);
 
       const torrent = torrents.find(t => t.hash == hash)!; // It will be found, obviously.
+      if (torrent.is_read || readTorrents.has(hash)) {
+         return; // already marked as read
+      }
 
-      if (torrent.is_read) return; // short-circuit
-
-      torrent.is_read = true;
-      const newTorrents = [...torrents];
-      setTorrents(newTorrents);
+      setReadTorrents(prev => new Set(prev).add(hash));
 
       // Don't bother await'ing on it, just mark it as read on the backend.
       fetch(`/api/v2/rss?backendUrl=${encodeURIComponent(backendUrl)}`, {
@@ -284,6 +285,7 @@ export function TorrentClient({ backendUrl, setBackendUrl, torrents, setTorrents
                onSort={handleSort}
                selectedTorrent={selectedTorrent}
                onRowClick={handleRowClick}
+               readTorrents={readTorrents}
             />
          </div>
       </div>

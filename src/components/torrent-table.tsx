@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import type { Torrent, TorrentStatus, SortConfig } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,6 +20,7 @@ type Props = {
    onSort: (key: keyof Torrent | "type", isShiftClick: boolean) => void;
    selectedTorrent: string | null;
    onRowClick: (hash: string) => void;
+   readTorrents: Set<string>;
 };
 
 type HeaderConfig = {
@@ -64,7 +66,7 @@ const SortableHeader = ({
    );
 };
 
-export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selectedTorrent, onRowClick }: Props) {
+export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selectedTorrent, onRowClick, readTorrents }: Props) {
    const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
    const [torrentForModal, setTorrentForModal] = useState<Torrent | null>(null);
 
@@ -124,7 +126,10 @@ export function TorrentTable({ backendUrl, torrents, sortConfig, onSort, selecte
                                     }
                                  }}
                                  data-state={selectedTorrent === torrent.hash ? "selected" : "unselected"}
-                                 className={cn("h-9 cursor-pointer", torrent.is_read && "text-muted-foreground")}>
+                                 className={cn(
+                                    "h-9 cursor-pointer",
+                                    (torrent.is_read || readTorrents.has(torrent.hash)) && "text-muted-foreground",
+                                 )}>
                                  <TableCell className="max-w-xs truncate p-2 font-medium md:max-w-md" title={torrent.name}>
                                     {torrent.name}
                                  </TableCell>
