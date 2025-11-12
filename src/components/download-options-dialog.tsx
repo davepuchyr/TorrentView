@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -133,18 +134,18 @@ const FileTree = ({
    return (
       <div>
          <div className={cn("flex items-center rounded-md p-1 text-sm hover:bg-accent", { "bg-accent/50": isSelected })}>
-            <div style={{ paddingLeft: `${level * 1.5}rem` }} className="flex flex-grow items-center truncate">
+            <div style={{ paddingLeft: `${level * 1.5}rem` }} className="flex flex-grow items-center overflow-hidden">
                <Checkbox id={`file-${node.path}`} checked={isSelected} onCheckedChange={handleCheckedChange} className="mr-2" />
                {isDirectory && (
                   <ChevronRight
-                     className={cn("mr-1 h-4 w-4 transition-transform", { "rotate-90": isOpen })}
+                     className={cn("mr-1 h-4 w-4 shrink-0 transition-transform", { "rotate-90": isOpen })}
                      onClick={() => setIsOpen(!isOpen)}
                   />
                )}
-               {!isDirectory && <div className="mr-1 w-5" />}
-               <label htmlFor={`file-${node.path}`} className="flex flex-grow items-center gap-1 truncate">
-                  {isDirectory && <Folder className="h-4 w-4 text-primary" />}
-                  {node.name}
+               {!isDirectory && <div className="mr-1 w-5 shrink-0" />}
+               <label htmlFor={`file-${node.path}`} className="flex flex-grow cursor-pointer items-center gap-1 overflow-hidden">
+                  {isDirectory && <Folder className="h-4 w-4 shrink-0 text-primary" />}
+                  <span className="truncate">{node.name}</span>
                </label>
             </div>
             <div className="pr-2 text-xs tabular-nums text-muted-foreground">{formatBytes(node.size)}</div>
@@ -496,7 +497,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                   </div>
 
                   {/* Right Column */}
-                  <div className="col-span-2 space-y-4">
+                  <div className="col-span-2 flex flex-col space-y-4">
                      <div className="flex items-center justify-between">
                         <div className="space-x-2">
                            <Button type="button" variant="outline" onClick={handleSelectAll}>
@@ -510,8 +511,8 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                            {selectedFileCount} / {totalFileCount} files selected
                         </div>
                      </div>
-                     <ScrollArea className="h-[400px] rounded-md border">
-                        <div className="w-full overflow-x-auto p-1">
+                     <ScrollArea className="flex-grow rounded-md border">
+                        <div className="h-full overflow-x-auto p-1">
                            <div className="min-w-max">
                               {isLoadingFiles ? (
                                  <div className="space-y-2 p-4">
@@ -530,7 +531,7 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
                                        className="mr-2"
                                     />
 
-                                    <label htmlFor={`file-${torrent.name}`} className="flex-grow">
+                                    <label htmlFor={`file-${torrent.name}`} className="flex-grow truncate">
                                        {torrent.name}
                                     </label>
 
@@ -554,5 +555,3 @@ export function DownloadOptionsDialog({ backendUrl, torrent, isOpen, onClose }: 
       </Dialog>
    );
 }
-
-    
